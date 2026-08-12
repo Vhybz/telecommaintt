@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:go_router/go_router.dart';
 import '../data/auth_repository.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -13,12 +14,28 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _isLoading = true;
   bool _isUploading = false;
+  bool _isEditing = false;
+  bool _isSaving = false;
   Map<String, dynamic>? _profileData;
+
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _professionController = TextEditingController();
+  int? _selectedRoleId;
 
   @override
   void initState() {
     super.initState();
     _fetchProfile();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _professionController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchProfile() async {
@@ -30,6 +47,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           setState(() {
             _profileData = data;
             _isLoading = false;
+            if (data != null) {
+              _nameController.text = data['full_name'] ?? '';
+              _phoneController.text = data['phone'] ?? '';
+              _professionController.text = data['profession'] ?? '';
+              _selectedRoleId = data['role_id'];
+            }
           });
         }
       }
@@ -40,6 +63,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           SnackBar(content: Text('Error fetching profile: $e'), backgroundColor: Colors.red),
         );
       }
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      final user = ref.read(authRepositoryProvider).currentUser;
+      if (user != null) {
+        await ref.read(authRepositoryProvider).updateProfile(
+          userId: user.id,
+          fullName: _nameController.text.trim(),
+          phone: _phoneController.text.trim(),
+          profession: _professionController.text.trim(),
+          roleId: _selectedRoleId,
+        );
+        
+        await _fetchProfile();
+        setState(() => _isEditing = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile updated successfully!')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Update failed: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -81,88 +139,175 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     final user = ref.watch(authRepositoryProvider).currentUser;
-    final fullName = _profileData?['full_name'] ?? 'No Name';
-    final role = _profileData?['roles']?['name'] ?? 'Technician';
-    final phone = _profileData?['phone'] ?? 'Not set';
-    final profession = _profileData?['profession'] ?? 'Not set';
     final avatarUrl = _profileData?['avatar_url'];
+    final rolesAsync = ref.watch(rolesProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'User Profile',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 32),
-          
-          Center(
-            child: Stack(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                  backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
-                  child: avatarUrl == null && !_isUploading
-                    ? Icon(Icons.person, size: 60, color: Theme.of(context).colorScheme.primary)
-                    : _isUploading 
-                        ? const CircularProgressIndicator()
-                        : null,
+                const Text(
+                  'User Profile',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: FloatingActionButton.small(
-                    onPressed: _isUploading ? null : _pickAndUploadImage,
-                    child: const Icon(Icons.camera_alt),
+                if (!_isEditing)
+                  TextButton.icon(
+                    onPressed: () => setState(() => _isEditing = true),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Edit'),
+                  )
+                else
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          _fetchProfile(); // Reset fields
+                          setState(() => _isEditing = false);
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: _isSaving ? null : _saveProfile,
+                        child: _isSaving 
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Save'),
+                      ),
+                    ],
                   ),
-                ),
               ],
             ),
-          ),
-          
-          const SizedBox(height: 48),
-          
-          _buildInfoSection(
-            title: 'Personal Information',
-            children: [
-              _buildInfoTile(Icons.person_outline, 'Full Name', fullName),
-              _buildInfoTile(Icons.email_outlined, 'Email', user?.email ?? ''),
-              _buildInfoTile(Icons.phone_outlined, 'Phone', phone),
-              _buildInfoTile(Icons.work_outline, 'Profession', profession),
-            ],
-          ),
-          
-          const SizedBox(height: 24),
-          
-          _buildInfoSection(
-            title: 'Account Role',
-            children: [
-              _buildInfoTile(Icons.admin_panel_settings_outlined, 'Current Role', role, isBadge: true),
-            ],
-          ),
-          
-          const SizedBox(height: 48),
-          
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Profile editing will be enabled in the next update.')),
-                );
-              },
-              icon: const Icon(Icons.edit_outlined),
-              label: const Text('Edit Profile'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            const SizedBox(height: 32),
+            
+            Center(
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                    child: avatarUrl == null && !_isUploading
+                      ? Icon(Icons.person, size: 60, color: Theme.of(context).colorScheme.primary)
+                      : _isUploading 
+                          ? const CircularProgressIndicator()
+                          : null,
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: FloatingActionButton.small(
+                      onPressed: _isUploading ? null : _pickAndUploadImage,
+                      child: const Icon(Icons.camera_alt),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            
+            const SizedBox(height: 48),
+            
+            _buildInfoSection(
+              title: 'Personal Information',
+              children: [
+                if (!_isEditing) ...[
+                  _buildInfoTile(Icons.person_outline, 'Full Name', _nameController.text),
+                  _buildInfoTile(Icons.email_outlined, 'Email', user?.email ?? ''),
+                  _buildInfoTile(Icons.phone_outlined, 'Phone', _phoneController.text),
+                  _buildInfoTile(Icons.work_outline, 'Profession', _professionController.text),
+                ] else ...[
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _nameController,
+                          decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person_outline)),
+                          validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          initialValue: user?.email,
+                          enabled: false,
+                          decoration: const InputDecoration(labelText: 'Email (Read-only)', prefixIcon: Icon(Icons.email_outlined)),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _phoneController,
+                          decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone_outlined)),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _professionController,
+                          decoration: const InputDecoration(labelText: 'Profession', prefixIcon: Icon(Icons.work_outline)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            
+            const SizedBox(height: 24),
+            
+            _buildInfoSection(
+              title: 'Account Role',
+              children: [
+                if (!_isEditing)
+                  _buildInfoTile(
+                    Icons.admin_panel_settings_outlined, 
+                    'Current Role', 
+                    _profileData?['roles']?['name'] ?? 'Technician', 
+                    isBadge: true
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: rolesAsync.when(
+                      data: (roles) => DropdownButtonFormField<int>(
+                        value: _selectedRoleId,
+                        decoration: const InputDecoration(labelText: 'Role', prefixIcon: Icon(Icons.admin_panel_settings_outlined)),
+                        items: roles.map((r) => DropdownMenuItem<int>(
+                          value: r['id'] as int,
+                          child: Text(r['name'] as String),
+                        )).toList(),
+                        onChanged: (v) => setState(() => _selectedRoleId = v),
+                      ),
+                      loading: () => const LinearProgressIndicator(),
+                      error: (_, __) => const Text('Error loading roles'),
+                    ),
+                  ),
+              ],
+            ),
+            
+            const SizedBox(height: 48),
+            
+            if (!_isEditing)
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    await ref.read(authRepositoryProvider).signOut();
+                    if (context.mounted) {
+                      context.go('/login');
+                    }
+                  },
+                  icon: const Icon(Icons.logout, color: Colors.red),
+                  label: const Text('Logout', style: TextStyle(color: Colors.red)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: const BorderSide(color: Colors.red),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -211,7 +356,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           )
         : Text(
-            value,
+            value.isEmpty ? 'Not set' : value,
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
     );

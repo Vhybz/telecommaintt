@@ -21,6 +21,7 @@ import '../../predictions/data/prediction_repository.dart';
 import '../../predictions/data/model_metadata_repository.dart';
 import '../../faults/data/fault_repository.dart';
 import '../../maintenance/data/maintenance_repository.dart';
+import '../../kpis/data/kpi_repository.dart';
 import 'package:intl/intl.dart';
 
 final dashboardMapControllerProvider = StateProvider<google.GoogleMapController?>((ref) => null);
@@ -180,18 +181,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             children: [
               IconButton(
                 icon: Icon(Icons.notifications_none_rounded, color: Theme.of(context).colorScheme.onSurface),
-                onPressed: () {},
+                onPressed: () => setState(() => _selectedIndex = 4), // Go to Alerts
               ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
-                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                  child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                ),
-              )
+              ref.watch(alarmsProvider).when(
+                data: (alarms) {
+                  final openAlarms = alarms.where((a) => a.status == 'Open').length;
+                  if (openAlarms == 0) return const SizedBox.shrink();
+                  return Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text(
+                        openAlarms > 9 ? '9+' : openAlarms.toString(), 
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), 
+                        textAlign: TextAlign.center
+                      ),
+                    ),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
             ],
           ),
           const SizedBox(width: 16),
@@ -457,13 +470,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   },
                   children: [
                     _buildTableHeader(),
-                    ...displayPredictions.map((p) => _buildTableRow(
-                      (p.stationId != null && p.stationId!.length > 8) ? p.stationId!.substring(0, 8) : (p.stationId ?? 'Unknown'),
-                      p.faultType,
-                      '${(p.probability * 100).toStringAsFixed(0)}%',
-                      p.riskLevel,
-                      'New',
-                    )),
+                    ...displayPredictions.map((p) {
+                      String status = 'Active';
+                      if (p.riskLevel == 'High') status = 'Urgent';
+                      if (p.riskLevel == 'Medium') status = 'Review';
+                      
+                      return _buildTableRow(
+                        (p.stationId != null && p.stationId!.length > 8) ? p.stationId!.substring(0, 8) : (p.stationId ?? 'Unknown'),
+                        p.faultType,
+                        '${(p.probability * 100).toStringAsFixed(0)}%',
+                        p.riskLevel,
+                        status,
+                      );
+                    }),
                   ],
                 );
               },
@@ -618,6 +637,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             const SizedBox(height: 10),
             alarmsAsync.when(
               data: (alarms) {
+                if (alarms.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    child: Center(child: Text('No active alerts', style: TextStyle(fontSize: 12, color: Colors.grey))),
+                  );
+                }
                 final displayAlarms = alarms.take(4).toList();
                 return Column(
                   children: displayAlarms.map((alarm) {
@@ -829,6 +854,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             const SizedBox(height: 10),
             tasksAsync.when(
               data: (tasks) {
+                if (tasks.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    child: Center(child: Text('No pending tasks', style: TextStyle(fontSize: 12, color: Colors.grey))),
+                  );
+                }
                 final displayTasks = tasks.take(3).toList();
                 return Column(
                   children: displayTasks.map((task) {
@@ -888,6 +919,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildTrendChart() {
+    final kpisAsync = ref.watch(kpiRecordsProvider);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -897,7 +930,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('KPI Trends (BS-022)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const Text('Network Performance Trends', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ToggleButtons(
                   isSelected: const [true, false, false],
                   onPressed: (i) {},
@@ -910,27 +943,49 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             const SizedBox(height: 24),
             SizedBox(
               height: 240,
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.withValues(alpha: 0.1), strokeWidth: 1),
-                  ),
-                  titlesData: const FlTitlesData(
-                    leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
-                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  lineBarsData: [
-                    _buildLineBar(const [FlSpot(0, 75), FlSpot(2, 85), FlSpot(4, 80), FlSpot(6, 90), FlSpot(8, 88), FlSpot(10, 92)], AppColors.error),
-                    _buildLineBar(const [FlSpot(0, 60), FlSpot(2, 65), FlSpot(4, 58), FlSpot(6, 70), FlSpot(8, 68), FlSpot(10, 75)], AppColors.success),
-                    _buildLineBar(const [FlSpot(0, 40), FlSpot(2, 45), FlSpot(4, 42), FlSpot(6, 50), FlSpot(8, 48), FlSpot(10, 55)], Theme.of(context).colorScheme.primary),
-                    _buildLineBar(const [FlSpot(0, 20), FlSpot(2, 25), FlSpot(4, 22), FlSpot(6, 30), FlSpot(8, 28), FlSpot(10, 35)], AppColors.secondary),
-                  ],
-                ),
+              child: kpisAsync.when(
+                data: (kpis) {
+                  if (kpis.isEmpty) return const Center(child: Text('No KPI data available'));
+                  
+                  final reversedKpis = kpis.reversed.toList();
+                  
+                  return LineChart(
+                    LineChartData(
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.withValues(alpha: 0.1), strokeWidth: 1),
+                      ),
+                      titlesData: const FlTitlesData(
+                        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
+                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      lineBarsData: [
+                        _buildLineBar(
+                          reversedKpis.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.temperature ?? 0)).toList(), 
+                          AppColors.error
+                        ),
+                        _buildLineBar(
+                          reversedKpis.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.voltage ?? 0)).toList(), 
+                          AppColors.success
+                        ),
+                        _buildLineBar(
+                          reversedKpis.asMap().entries.map((e) => FlSpot(e.key.toDouble(), (e.value.availability ?? 0))).toList(), 
+                          Theme.of(context).colorScheme.primary
+                        ),
+                        _buildLineBar(
+                          reversedKpis.asMap().entries.map((e) => FlSpot(e.key.toDouble(), (e.value.cssr ?? 0))).toList(), 
+                          AppColors.secondary
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, __) => const Center(child: Text('Error loading trends')),
               ),
             ),
             const SizedBox(height: 12),
@@ -938,9 +993,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               spacing: 16,
               children: [
                 _ChartLegendItem(label: 'Temp (°C)', color: AppColors.error),
-                _ChartLegendItem(label: 'Battery (V)', color: AppColors.success),
-                _ChartLegendItem(label: 'Power (%)', isPrimary: true),
-                _ChartLegendItem(label: 'Traffic (%)', color: AppColors.secondary),
+                _ChartLegendItem(label: 'Voltage (V)', color: AppColors.success),
+                _ChartLegendItem(label: 'Avail (%)', isPrimary: true),
+                _ChartLegendItem(label: 'CSSR (%)', color: AppColors.secondary),
               ],
             ),
           ],

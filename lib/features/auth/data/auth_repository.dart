@@ -56,6 +56,7 @@ class AuthRepository {
     final fileExtension = fileName.split('.').last;
     final path = '$userId/avatar.$fileExtension';
 
+    // In storage_client 2.x, uploadBinary is the method for raw bytes
     await _client.storage.from('avatars').uploadBinary(
       path,
       bytes,
@@ -103,5 +104,20 @@ class AuthRepository {
   Future<List<Map<String, dynamic>>> getRoles() async {
     final response = await _client.from('roles').select().order('id');
     return List<Map<String, dynamic>>.from(response);
+  }
+
+  Future<void> updateProfile({
+    required String userId,
+    required String fullName,
+    String? phone,
+    String? profession,
+    int? roleId,
+  }) async {
+    await _client.from('profiles').update({
+      'full_name': fullName,
+      'phone': phone,
+      'profession': profession,
+      if (roleId != null) 'role_id': roleId,
+    }).eq('id', userId);
   }
 }

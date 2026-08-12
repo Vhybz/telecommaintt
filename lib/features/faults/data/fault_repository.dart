@@ -6,15 +6,7 @@ final faultRepositoryProvider = Provider((ref) => FaultRepository(Supabase.insta
 
 final alarmsProvider = FutureProvider<List<AlarmLog>>((ref) async {
   final repository = ref.watch(faultRepositoryProvider);
-  try {
-    return await repository.getAlarms();
-  } catch (e) {
-    return [
-      AlarmLog(id: '1', stationId: 'GH-ACC-001', description: 'Main power grid outage in Accra Central', severity: 'Critical', status: 'Open', createdAt: DateTime.now().toIso8601String()),
-      AlarmLog(id: '2', stationId: 'GH-KMS-042', description: 'Cooling system failure at Kumasi Hub', severity: 'Major', status: 'Acknowledged', createdAt: DateTime.now().toIso8601String()),
-      AlarmLog(id: '3', stationId: 'GH-TKD-012', description: 'Minor signal interference detected near Takoradi Port', severity: 'Minor', status: 'Resolved', createdAt: DateTime.now().toIso8601String()),
-    ];
-  }
+  return await repository.getAlarms();
 });
 
 class FaultRepository {
