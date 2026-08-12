@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
 import '../../../core/theme/app_colors.dart';
 import '../data/equipment_repository.dart';
+import '../../maintenance/presentation/add_task_dialog.dart';
 
 class EquipmentListScreen extends ConsumerWidget {
   const EquipmentListScreen({super.key});
@@ -169,7 +170,20 @@ class EquipmentListScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), overflow: TextOverflow.ellipsis)),
+                    IconButton(
+                      icon: const Icon(Icons.build_outlined, size: 18),
+                      onPressed: () => showDialog(
+                        context: context,
+                        builder: (context) => AddTaskDialog(initialStationId: item['station_id']),
+                      ),
+                      tooltip: 'Create Task',
+                    ),
+                  ],
+                ),
                 Text('SN: ${item['serial_number'] ?? 'N/A'}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                 const SizedBox(height: 8),
                 Row(

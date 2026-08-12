@@ -9,6 +9,11 @@ final stationsProvider = FutureProvider<List<BaseStation>>((ref) async {
   return await repository.getStations();
 });
 
+final regionsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final repository = ref.watch(stationRepositoryProvider);
+  return await repository.getRegions();
+});
+
 class StationRepository {
   final SupabaseClient _client;
   StationRepository(this._client);
@@ -16,6 +21,11 @@ class StationRepository {
   Future<List<BaseStation>> getStations() async {
     final response = await _client.from('base_stations').select().order('name');
     return (response as List).map((json) => BaseStation.fromJson(json)).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getRegions() async {
+    final response = await _client.from('regions').select().order('name');
+    return List<Map<String, dynamic>>.from(response);
   }
 
   Future<BaseStation> getStationById(String id) async {

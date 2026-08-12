@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../data/maintenance_repository.dart';
+import 'add_task_dialog.dart';
 
 class MaintenanceScreen extends ConsumerStatefulWidget {
   const MaintenanceScreen({super.key});
@@ -38,7 +39,10 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen> with Sing
             children: [
               const Text('Maintenance Tasks', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (context) => const AddTaskDialog(),
+                ),
                 icon: const Icon(Icons.add),
                 label: const Text('New Ticket'),
               ),
@@ -172,10 +176,36 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen> with Sing
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextButton(onPressed: () {}, child: const Text('View Details')),
+                    TextButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Task details view coming soon')),
+                        );
+                      }, 
+                      child: const Text('View Details')
+                    ),
                     const SizedBox(width: 8),
                     if (status != 'Completed')
-                      OutlinedButton(onPressed: () {}, child: const Text('Complete')),
+                      OutlinedButton(
+                        onPressed: () async {
+                          try {
+                            await ref.read(maintenanceRepositoryProvider).updateTaskStatus(task['id'], 'Completed');
+                            ref.invalidate(maintenanceTasksProvider);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Task marked as completed')),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                              );
+                            }
+                          }
+                        }, 
+                        child: const Text('Complete')
+                      ),
                   ],
                 ),
               ],

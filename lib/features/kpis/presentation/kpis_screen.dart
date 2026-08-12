@@ -3,6 +3,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:lottie/lottie.dart';
 import '../../../core/theme/app_colors.dart';
 
+import '../../maintenance/presentation/add_task_dialog.dart';
+
 class KpisScreen extends StatelessWidget {
   const KpisScreen({super.key});
 
@@ -236,8 +238,17 @@ class KpisScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('KPI Breakdown', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Table(
+            TextButton.icon(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Generating KPI analysis report...')),
+                );
+              },
+              icon: const Icon(Icons.picture_as_pdf, size: 16),
+              label: const Text('Export PDF', style: TextStyle(fontSize: 12)),
+            ),
+          ],
+        ),
               columnWidths: const {
                 0: FlexColumnWidth(2),
                 1: FlexColumnWidth(1),

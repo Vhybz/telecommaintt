@@ -24,6 +24,8 @@ import '../../faults/data/fault_repository.dart';
 final dashboardMapControllerProvider = StateProvider<google.GoogleMapController?>((ref) => null);
 final dashboardMapCenterProvider = StateProvider<google.LatLng>((ref) => const google.LatLng(7.9465, -1.0232)); // Center of Ghana
 
+import '../../maintenance/data/maintenance_repository.dart';
+
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
@@ -799,6 +801,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildMaintenanceTasksList() {
+    final tasksAsync = ref.watch(maintenanceTasksProvider);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -809,13 +813,37 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Maintenance Tasks', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                TextButton(onPressed: () {}, child: const Text('View All', style: TextStyle(fontSize: 12))),
+                TextButton(
+                  onPressed: () => setState(() => _selectedIndex = 6), 
+                  child: const Text('View All', style: TextStyle(fontSize: 12))
+                ),
               ],
             ),
             const SizedBox(height: 10),
-            _buildMaintenanceTaskItem('Antenna Realignment', 'BS-044 • Sunyani STU', 'Today', 'Critical', AppColors.critical),
-            _buildMaintenanceTaskItem('Inspect Battery System', 'BS-022 • Accra Central', '19 May 2024', 'High', AppColors.error),
-            _buildMaintenanceTaskItem('Clean Cooling Units', 'BS-008 • Kumasi Tech', '20 May 2024', 'Medium', AppColors.warning),
+            tasksAsync.when(
+              data: (tasks) {
+                final displayTasks = tasks.take(3).toList();
+                return Column(
+                  children: displayTasks.map((task) {
+                    final isCritical = (task['fault_description']?.toLowerCase().contains('critical') ?? false);
+                    final color = isCritical ? AppColors.critical : AppColors.warning;
+                    final dateStr = task['scheduled_date'] != null 
+                        ? DateFormat('dd MMM').format(DateTime.parse(task['scheduled_date']))
+                        : 'TBD';
+                    
+                    return _buildMaintenanceTaskItem(
+                      task['fault_description'] ?? 'No Desc',
+                      task['base_stations']?['name'] ?? 'Unknown Site',
+                      dateStr,
+                      isCritical ? 'Critical' : 'Medium',
+                      color,
+                    );
+                  }).toList(),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (_, __) => const Text('Error loading tasks'),
+            ),
           ],
         ),
       ),

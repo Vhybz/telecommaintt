@@ -8,6 +8,8 @@ import '../data/station_repository.dart';
 import '../domain/base_station.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../widgets/skeleton_loader.dart';
+import 'add_station_dialog.dart';
+import '../../maintenance/presentation/add_task_dialog.dart';
 
 class StationListScreen extends ConsumerStatefulWidget {
   const StationListScreen({super.key});
@@ -71,7 +73,10 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
                 ],
               ),
               ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (context) => const AddStationDialog(),
+                ),
                 icon: const Icon(Icons.add),
                 label: const Text('Add Site'),
               ),
@@ -191,7 +196,18 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
                   children: [
                     TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
                     const SizedBox(width: 8),
-                    ElevatedButton(onPressed: () {}, child: const Text('View Full Specs')),
+                    if (station.status != 'Online')
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          showDialog(
+                            context: context,
+                            builder: (context) => AddTaskDialog(initialStationId: station.id),
+                          );
+                        },
+                        icon: const Icon(Icons.build, size: 16),
+                        label: const Text('Create Task'),
+                      ),
                   ],
                 ),
               ],
