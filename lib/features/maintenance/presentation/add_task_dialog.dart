@@ -61,6 +61,7 @@ class _AddTaskDialogState extends ConsumerState<AddTaskDialog> {
   @override
   Widget build(BuildContext context) {
     final stationsAsync = ref.watch(stationsProvider);
+    final techsAsync = ref.watch(techniciansProvider);
 
     return AlertDialog(
       title: const Text('Create Maintenance Task'),
@@ -73,7 +74,7 @@ class _AddTaskDialogState extends ConsumerState<AddTaskDialog> {
               stationsAsync.when(
                 data: (stations) => DropdownButtonFormField<String>(
                   value: _selectedStationId,
-                  decoration: const InputDecoration(labelText: 'Base Station'),
+                  decoration: const InputDecoration(labelText: 'Base Station', prefixIcon: Icon(Icons.cell_tower)),
                   items: stations.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
                   onChanged: (v) => setState(() => _selectedStationId = v),
                   validator: (v) => v == null ? 'Required' : null,
@@ -82,14 +83,27 @@ class _AddTaskDialogState extends ConsumerState<AddTaskDialog> {
                 error: (error, stack) => const Text('Error loading stations'),
               ),
               const SizedBox(height: 16),
+              techsAsync.when(
+                data: (techs) => DropdownButtonFormField<String>(
+                  value: _selectedTechId,
+                  decoration: const InputDecoration(labelText: 'Assign Technician', prefixIcon: Icon(Icons.person_outline)),
+                  items: techs.map((t) => DropdownMenuItem(value: t['id'] as String, child: Text(t['full_name'] as String))).toList(),
+                  onChanged: (v) => setState(() => _selectedTechId = v),
+                  validator: (v) => v == null ? 'Please assign a technician' : null,
+                ),
+                loading: () => const LinearProgressIndicator(),
+                error: (error, stack) => const Text('Error loading technicians'),
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Fault Description'),
+                decoration: const InputDecoration(labelText: 'Fault Description', prefixIcon: Icon(Icons.description_outlined)),
                 maxLines: 3,
                 validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
               ),
               const SizedBox(height: 16),
               ListTile(
+                contentPadding: EdgeInsets.zero,
                 title: const Text('Scheduled Date'),
                 subtitle: Text('${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}'),
                 trailing: const Icon(Icons.calendar_today),

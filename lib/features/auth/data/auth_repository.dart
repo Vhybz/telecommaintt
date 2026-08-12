@@ -16,6 +16,11 @@ final rolesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   return await authRepo.getRoles();
 });
 
+final techniciansProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final authRepo = ref.watch(authRepositoryProvider);
+  return await authRepo.getTechnicians();
+});
+
 class AuthRepository {
   final SupabaseClient _client;
   AuthRepository(this._client);
@@ -103,6 +108,11 @@ class AuthRepository {
 
   Future<List<Map<String, dynamic>>> getRoles() async {
     final response = await _client.from('roles').select().order('id');
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  Future<List<Map<String, dynamic>>> getTechnicians() async {
+    final response = await _client.from('profiles').select('id, full_name').eq('role_id', 3).order('full_name');
     return List<Map<String, dynamic>>.from(response);
   }
 
