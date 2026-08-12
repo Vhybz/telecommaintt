@@ -5,7 +5,8 @@ import '../domain/base_station.dart';
 import 'package:uuid/uuid.dart';
 
 class AddStationDialog extends ConsumerStatefulWidget {
-  const AddStationDialog({super.key});
+  final BaseStation? station;
+  const AddStationDialog({super.key, this.station});
 
   @override
   ConsumerState<AddStationDialog> createState() => _AddStationDialogState();
@@ -21,6 +22,23 @@ class _AddStationDialogState extends ConsumerState<AddStationDialog> {
   String _selectedStatus = 'Online';
   int? _selectedRegionId;
 
+  bool get _isEditing => widget.station != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isEditing) {
+      final s = widget.station!;
+      _siteIdController.text = s.siteId;
+      _nameController.text = s.name;
+      _operatorController.text = s.operator ?? '';
+      _latitudeController.text = s.latitude?.toString() ?? '';
+      _longitudeController.text = s.longitude?.toString() ?? '';
+      _selectedStatus = s.status;
+      _selectedRegionId = s.regionId;
+    }
+  }
+
   @override
   void dispose() {
     _siteIdController.dispose();
@@ -35,7 +53,7 @@ class _AddStationDialogState extends ConsumerState<AddStationDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     final station = BaseStation(
-      id: const Uuid().v4(),
+      id: _isEditing ? widget.station!.id : const Uuid().v4(),
       siteId: _siteIdController.text.trim(),
       name: _nameController.text.trim(),
       status: _selectedStatus,
@@ -43,17 +61,21 @@ class _AddStationDialogState extends ConsumerState<AddStationDialog> {
       latitude: double.tryParse(_latitudeController.text),
       longitude: double.tryParse(_longitudeController.text),
       operator: _operatorController.text.trim(),
-      installationDate: DateTime.now().toIso8601String(),
+      installationDate: _isEditing ? widget.station!.installationDate : DateTime.now().toIso8601String(),
     );
 
     try {
-      await ref.read(stationRepositoryProvider).createStation(station);
+      if (_isEditing) {
+        await ref.read(stationRepositoryProvider).updateStation(station);
+      } else {
+        await ref.read(stationRepositoryProvider).createStation(station);
+      }
       ref.invalidate(stationsProvider);
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error adding station: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -62,7 +84,7 @@ class _AddStationDialogState extends ConsumerState<AddStationDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add New Base Station'),
+      title: Text(_isEditing ? 'Edit Base Station' : 'Add New Base Station'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -82,7 +104,7 @@ class _AddStationDialogState extends ConsumerState<AddStationDialog> {
               const SizedBox(height: 16),
               ref.watch(regionsProvider).when(
                 data: (regions) => DropdownButtonFormField<int>(
-                  value: _selectedRegionId,
+                  initialValue: _selectedRegionId,
                   decoration: const InputDecoration(labelText: 'Region'),
                   items: regions.map((r) => DropdownMenuItem<int>(
                     value: r['id'] as int,
@@ -96,7 +118,7 @@ class _AddStationDialogState extends ConsumerState<AddStationDialog> {
               ),
               DropdownButtonFormField<String>(
                 value: _selectedStatus,
-                decoration: const InputDecoration(labelText: 'Initial Status'),
+                decoration: const InputDecoration(labelText: 'Status'),
                 items: ['Online', 'Offline', 'Maintenance', 'Degraded'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                 onChanged: (v) => setState(() => _selectedStatus = v!),
               ),
@@ -129,7 +151,7 @@ class _AddStationDialogState extends ConsumerState<AddStationDialog> {
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        ElevatedButton(onPressed: _submit, child: const Text('Add Station')),
+        ElevatedButton(onPressed: _submit, child: Text(_isEditing ? 'Save Changes' : 'Add Station')),
       ],
     );
   }

@@ -53,7 +53,6 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
             alignment: WrapAlignment.spaceBetween,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              // Use a Wrap here instead of Row to prevent internal overflow
               Wrap(
                 spacing: 12,
                 runSpacing: 8,
@@ -88,25 +87,18 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
   }
 
   Widget _buildMapView(BuildContext context, List<BaseStation> stations) {
-    // Force Google Maps for Web regardless of the host OS (Windows/Mac/Linux)
-    if (kIsWeb) {
-      return _buildGoogleMap(stations);
-    }
-
-    // For Native platforms, only use Google Maps on Android and iOS
+    if (kIsWeb) return _buildGoogleMap(stations);
     final platform = Theme.of(context).platform;
     if (platform == TargetPlatform.android || platform == TargetPlatform.iOS) {
       return _buildGoogleMap(stations);
     }
-
-    // Fallback for native Windows, macOS, and Linux
     return _buildOsmMap(stations);
   }
 
   Widget _buildGoogleMap(List<BaseStation> stations) {
     return google.GoogleMap(
       initialCameraPosition: const google.CameraPosition(
-        target: google.LatLng(7.9465, -1.0232), // Centered on Ghana
+        target: google.LatLng(7.9465, -1.0232),
         zoom: 7,
       ),
       myLocationButtonEnabled: false,
@@ -115,7 +107,6 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
       markers: stations.map((station) {
         final lat = station.latitude ?? 5.6037;
         final lng = station.longitude ?? -0.1870;
-
         return google.Marker(
           markerId: google.MarkerId(station.id),
           position: google.LatLng(lat, lng),
@@ -148,7 +139,6 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
             final lat = station.latitude ?? 5.6037;
             final lng = station.longitude ?? -0.1870;
             final statusColor = station.status == 'Online' ? AppColors.success : AppColors.error;
-
             return osm.Marker(
               point: latlong.LatLng(lat, lng),
               width: 40,
@@ -185,19 +175,41 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(station.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(station.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 Text('Site ID: ${station.siteId}'),
                 Text('Status: ${station.status}'),
-                Text('Region: ${station.regionId}'),
+                Text('Operator: ${station.operator ?? "N/A"}'),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _editStation(station);
+                      },
+                      icon: const Icon(Icons.edit, size: 16),
+                      label: const Text('Edit'),
+                    ),
                     const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _deleteStation(station);
+                      },
+                      icon: const Icon(Icons.delete, size: 16, color: Colors.red),
+                      label: const Text('Delete', style: TextStyle(color: Colors.red)),
+                    ),
+                    const Spacer(),
                     if (station.status != 'Online')
-                      OutlinedButton.icon(
+                      ElevatedButton.icon(
                         onPressed: () {
                           Navigator.pop(context);
                           showDialog(
@@ -214,6 +226,48 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _editStation(BaseStation station) {
+    showDialog(
+      context: context,
+      builder: (context) => AddStationDialog(station: station),
+    );
+  }
+
+  void _deleteStation(BaseStation station) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Base Station'),
+        content: Text('Are you sure you want to delete ${station.name}? This action cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await ref.read(stationRepositoryProvider).deleteStation(station.id);
+                ref.invalidate(stationsProvider);
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Station deleted successfully')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }
@@ -278,7 +332,20 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
                       style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
                     ),
                   ),
-                  const Icon(Icons.more_vert),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _editStation(station);
+                      } else if (value == 'delete') {
+                        _deleteStation(station);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                      const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
+                    ],
+                    icon: const Icon(Icons.more_vert),
+                  ),
                 ],
               ),
               const Spacer(),
