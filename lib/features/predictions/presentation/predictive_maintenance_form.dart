@@ -94,40 +94,16 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
       setState(() => _isLoading = true);
       
       try {
-        // 1. Extract raw numerical values
-        double avail = double.parse(_availabilityController.text);
-        double erab = double.parse(_erabController.text);
-        double cssr = double.parse(_cssrController.text);
-        double dcr = double.parse(_dcrController.text);
-        double latency = double.parse(_latencyController.text);
-        double throughput = double.parse(_throughputController.text);
-        double prb = double.parse(_prbController.text);
-
-        // 2. Compute the 3 interaction features dynamically
-        double dcrCssrRatio = cssr != 0 ? (dcr / cssr) : 0.0;
-        double tpPrbEfficiency = prb != 0 ? (throughput / prb) : 0.0;
-        double availXCssr = avail * cssr;
-
-        // 3. Construct One-Hot Encoding dynamically for all 15 regions
-        Map<String, double> regionMap = {};
-        for (var reg in _regions) {
-          String key = "REGION_$reg";
-          regionMap[key] = (_selectedRegion == reg) ? 1.0 : 0.0;
-        }
-
-        // 4. Build the complete 25-feature JSON payload
+        // 1. Build the simple payload (the Python backend handles preprocessing)
         final Map<String, dynamic> payload = {
-          "AVAILABILITY": avail,
-          "ERAB_Establishment_SUCCESS_RATE": erab,
-          "CALL_SET_UP_SUCCESS_RATE": cssr,
-          "DROP_CALL_RATE": dcr,
-          "AVERAGE_LATENCY": latency,
-          "CELL_TROUGHPUT": throughput,
-          "PRB_UTILIZATION": prb,
-          ...regionMap,
-          "DCR_CSSR_ratio": dcrCssrRatio,
-          "TP_PRB_efficiency": tpPrbEfficiency,
-          "AVAIL_x_CSSR": availXCssr,
+          "AVAILABILITY": double.parse(_availabilityController.text),
+          "ERAB_Establishment_SUCCESS_RATE": double.parse(_erabController.text),
+          "CALL_SET_UP_SUCCESS_RATE": double.parse(_cssrController.text),
+          "DROP_CALL_RATE": double.parse(_dcrController.text),
+          "AVERAGE_LATENCY": double.parse(_latencyController.text),
+          "CELL_TROUGHPUT": double.parse(_throughputController.text),
+          "PRB_UTILIZATION": double.parse(_prbController.text),
+          "REGION": _selectedRegion,
         };
 
         final response = await _dio.post(

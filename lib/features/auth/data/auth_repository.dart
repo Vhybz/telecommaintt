@@ -64,11 +64,24 @@ class AuthRepository {
   }
 
   Future<Map<String, dynamic>?> getUserProfile(String userId) async {
-    final response = await _client
-        .from('profiles')
-        .select('*, roles(name)')
-        .eq('id', userId)
-        .single();
-    return response;
+    try {
+      final response = await _client
+          .from('profiles')
+          .select('*, roles(name)')
+          .eq('id', userId)
+          .single();
+      return response;
+    } catch (e) {
+      // Fallback: If the roles join fails, just get the profile data
+      final fallbackResponse = await _client
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+      return {
+        ...fallbackResponse,
+        'roles': {'name': 'User'} // Default display name
+      };
+    }
   }
 }
