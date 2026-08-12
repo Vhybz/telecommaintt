@@ -1,48 +1,51 @@
--- Enable UUID extension
+-- 1. SETUP EXTENSIONS & CORE TABLES
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- ROLES TABLE
-CREATE TABLE roles (
+-- ROLES
+CREATE TABLE IF NOT EXISTS public.roles (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
     description TEXT
 );
 
-INSERT INTO roles (name, description) VALUES
-('Administrator', 'Full system access'),
-('Network Engineer', 'KPI monitoring and task assignment'),
-('Technician', 'Field maintenance and repair');
+INSERT INTO public.roles (id, name, description) VALUES
+(1, 'Administrator', 'Full system access'),
+(2, 'Network Engineer', 'KPI monitoring and task assignment'),
+(3, 'Technician', 'Field maintenance and repair')
+ON CONFLICT (id) DO NOTHING;
 
--- REGIONS TABLE
-CREATE TABLE regions (
+-- REGIONS
+CREATE TABLE IF NOT EXISTS public.regions (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL UNIQUE
 );
 
-INSERT INTO regions (name) VALUES
+INSERT INTO public.regions (name) VALUES
 ('Greater Accra'), ('Ashanti'), ('Western'), ('Central'), ('Eastern'),
 ('Northern'), ('Volta'), ('Upper East'), ('Upper West'), ('Bono'),
-('Bono East'), ('Ahafo'), ('Savannah'), ('North East'), ('Oti'), ('Western North');
+('Bono East'), ('Ahafo'), ('Savannah'), ('North East'), ('Oti'), ('Western North')
+ON CONFLICT (name) DO NOTHING;
 
--- PROFILES TABLE
-CREATE TABLE profiles (
+-- 2. FEATURE TABLES
+-- PROFILES
+CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
     full_name TEXT,
     phone TEXT,
     profession TEXT,
-    role_id INTEGER REFERENCES roles(id) DEFAULT 3,
-    region_id INTEGER REFERENCES regions(id),
+    role_id INTEGER REFERENCES public.roles(id) DEFAULT 3,
+    region_id INTEGER REFERENCES public.regions(id),
     avatar_url TEXT,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- BASE STATIONS TABLE
-CREATE TABLE base_stations (
+-- BASE STATIONS
+CREATE TABLE IF NOT EXISTS public.base_stations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     site_id TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
     status TEXT DEFAULT 'Online' CHECK (status IN ('Online', 'Offline', 'Maintenance', 'Degraded')),
-    region_id INTEGER REFERENCES regions(id),
+    region_id INTEGER REFERENCES public.regions(id),
     latitude DECIMAL(10, 8),
     longitude DECIMAL(11, 8),
     tower_type TEXT,
@@ -52,104 +55,61 @@ CREATE TABLE base_stations (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- EQUIPMENT TYPES
-CREATE TABLE equipment_types (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
-);
-
-INSERT INTO equipment_types (name) VALUES
-('Radio Unit'), ('RRU'), ('BBU'), ('Antenna'), ('Rectifier'),
-('Battery'), ('Generator'), ('Air Conditioner'), ('Microwave');
-
--- EQUIPMENT TABLE
-CREATE TABLE equipment (
+-- EQUIPMENT
+CREATE TABLE IF NOT EXISTS public.equipment (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    station_id UUID REFERENCES base_stations(id) ON DELETE CASCADE,
-    type_id INTEGER REFERENCES equipment_types(id),
+    station_id UUID REFERENCES public.base_stations(id) ON DELETE CASCADE,
     serial_number TEXT UNIQUE,
     model TEXT,
-    manufacturer TEXT,
-    installation_date DATE,
     status TEXT DEFAULT 'Active',
     health_score INTEGER DEFAULT 100,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- KPI RECORDS TABLE
-CREATE TABLE kpi_records (
+-- ALARM LOGS
+CREATE TABLE IF NOT EXISTS public.alarm_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    station_id UUID REFERENCES base_stations(id) ON DELETE CASCADE,
-    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    availability DECIMAL(5, 2),
-    cssr DECIMAL(5, 2), -- Call Setup Success Rate
-    cdr DECIMAL(5, 2),  -- Call Drop Rate
-    rsrp DECIMAL(10, 2),
-    rsrq DECIMAL(10, 2),
-    sinr DECIMAL(10, 2),
-    temperature DECIMAL(5, 2),
-    voltage DECIMAL(5, 2),
-    power_consumption DECIMAL(10, 2)
-);
-
--- ALARM LOGS TABLE
-CREATE TABLE alarm_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    station_id UUID REFERENCES base_stations(id) ON DELETE CASCADE,
-    equipment_id UUID REFERENCES equipment(id),
+    station_id UUID REFERENCES public.base_stations(id) ON DELETE CASCADE,
     severity TEXT CHECK (severity IN ('Critical', 'Major', 'Minor', 'Warning')),
     description TEXT,
     status TEXT DEFAULT 'Open' CHECK (status IN ('Open', 'Acknowledged', 'Resolved')),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    resolved_at TIMESTAMP WITH TIME ZONE
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- PREDICTIONS TABLE
-CREATE TABLE predictions (
+-- PREDICTIONS
+CREATE TABLE IF NOT EXISTS public.predictions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    station_id UUID REFERENCES base_stations(id) ON DELETE CASCADE,
-    equipment_id UUID REFERENCES equipment(id),
+    station_id UUID REFERENCES public.base_stations(id) ON DELETE CASCADE,
     fault_type TEXT,
-    probability DECIMAL(5, 2),
+    probability DECIMAL(5, 4), -- supports 0.9999
     risk_level TEXT CHECK (risk_level IN ('High', 'Medium', 'Low')),
     recommended_action TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- MAINTENANCE TASKS TABLE
-CREATE TABLE maintenance_tasks (
+-- MAINTENANCE TASKS
+CREATE TABLE IF NOT EXISTS public.maintenance_tasks (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    station_id UUID REFERENCES base_stations(id) ON DELETE CASCADE,
-    equipment_id UUID REFERENCES equipment(id),
-    assigned_to UUID REFERENCES profiles(id),
+    station_id UUID REFERENCES public.base_stations(id) ON DELETE CASCADE,
+    assigned_to UUID REFERENCES public.profiles(id),
     fault_description TEXT,
     scheduled_date TIMESTAMP WITH TIME ZONE,
     status TEXT DEFAULT 'Pending' CHECK (status IN ('Pending', 'In Progress', 'Completed', 'Cancelled')),
-    completion_notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ROW LEVEL SECURITY (RLS) - DISABLED
-ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
-ALTER TABLE base_stations DISABLE ROW LEVEL SECURITY;
-ALTER TABLE equipment DISABLE ROW LEVEL SECURITY;
-ALTER TABLE kpi_records DISABLE ROW LEVEL SECURITY;
-ALTER TABLE alarm_logs DISABLE ROW LEVEL SECURITY;
-ALTER TABLE predictions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE maintenance_tasks DISABLE ROW LEVEL SECURITY;
+-- 3. PERMISSIONS (Disable RLS for simple dev access)
+ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.base_stations DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.equipment DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.alarm_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.predictions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.maintenance_tasks DISABLE ROW LEVEL SECURITY;
 
--- STORAGE BUCKET FOR AVATARS
--- This ensures the bucket exists for profile pictures
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('avatars', 'avatars', true)
-ON CONFLICT (id) DO NOTHING;
-
--- STORAGE POLICIES (Public access for simplicity as requested)
-CREATE POLICY "Public Access" ON storage.objects FOR ALL USING (bucket_id = 'avatars');
-
--- Functions and Triggers for updated_at
+-- 4. AUTOMATION (TRIGGERS)
+-- Update timestamps
 CREATE OR REPLACE FUNCTION handle_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -158,27 +118,36 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER on_base_stations_updated BEFORE UPDATE ON base_stations FOR EACH ROW EXECUTE PROCEDURE handle_updated_at();
-CREATE TRIGGER on_equipment_updated BEFORE UPDATE ON equipment FOR EACH ROW EXECUTE PROCEDURE handle_updated_at();
-CREATE TRIGGER on_maintenance_tasks_updated BEFORE UPDATE ON maintenance_tasks FOR EACH ROW EXECUTE PROCEDURE handle_updated_at();
+DROP TRIGGER IF EXISTS on_base_stations_updated ON public.base_stations;
+CREATE TRIGGER on_base_stations_updated BEFORE UPDATE ON public.base_stations FOR EACH ROW EXECUTE PROCEDURE handle_updated_at();
 
--- Trigger for new user profile
+DROP TRIGGER IF EXISTS on_maintenance_tasks_updated ON public.maintenance_tasks;
+CREATE TRIGGER on_maintenance_tasks_updated BEFORE UPDATE ON public.maintenance_tasks FOR EACH ROW EXECUTE PROCEDURE handle_updated_at();
+
+-- SAFE SIGN UP TRIGGER (Always creates profile, never blocks auth)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+SECURITY DEFINER SET search_path = public
+AS $$
 BEGIN
-    INSERT INTO public.profiles (id, full_name, phone, profession, avatar_url, role_id)
+    INSERT INTO public.profiles (id, full_name, phone, profession, role_id)
     VALUES (
         NEW.id,
-        NEW.raw_user_meta_data->>'full_name',
-        NEW.raw_user_meta_data->>'phone',
-        NEW.raw_user_meta_data->>'profession',
-        NEW.raw_user_meta_data->>'avatar_url',
-        3
+        COALESCE(NEW.raw_user_meta_data->>'full_name', 'New User'),
+        COALESCE(NEW.raw_user_meta_data->>'phone', ''),
+        COALESCE(NEW.raw_user_meta_data->>'profession', ''),
+        COALESCE((NEW.raw_user_meta_data->>'role_id')::INTEGER, 3) -- Dynamic role from metadata
     );
+    RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- Refresh Schema Cache
+NOTIFY pgrst, 'reload schema';

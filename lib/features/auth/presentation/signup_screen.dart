@@ -27,6 +27,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   double _strength = 0;
   String _strengthText = '';
   Color _strengthColor = Colors.grey;
+  int? _selectedRoleId;
 
   void _checkPasswordStrength(String value) {
     double strength = 0;
@@ -75,6 +76,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
         fullName: fullName,
+        roleId: _selectedRoleId ?? 3,
         phone: _phoneController.text.trim(),
         profession: _professionController.text.trim(),
       );
@@ -210,6 +212,30 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                           icon: Icons.work_outline,
                           textCapitalization: TextCapitalization.sentences,
                           validator: (v) => v?.isEmpty ?? true ? 'Enter profession' : null,
+                        ),
+                        const SizedBox(height: 20),
+
+                        ref.watch(rolesProvider).when(
+                          data: (roles) => DropdownButtonFormField<int>(
+                            value: _selectedRoleId,
+                            decoration: InputDecoration(
+                              labelText: 'Account Role',
+                              prefixIcon: const Icon(Icons.admin_panel_settings_outlined),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                              ),
+                            ),
+                            items: roles.map((r) => DropdownMenuItem<int>(
+                              value: r['id'] as int,
+                              child: Text(r['name'] as String),
+                            )).toList(),
+                            onChanged: (v) => setState(() => _selectedRoleId = v),
+                            validator: (v) => v == null ? 'Please select a role' : null,
+                          ),
+                          loading: () => const LinearProgressIndicator(),
+                          error: (_, __) => const Text('Error loading roles'),
                         ),
                         const SizedBox(height: 20),
                         

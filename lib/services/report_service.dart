@@ -1,10 +1,9 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 
 class ReportService {
-  Future<File> generateStationReport(String stationName, Map<String, dynamic> data) async {
+  Future<Uint8List> generateStationReport(String stationName, Map<String, dynamic> data) async {
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -36,9 +35,6 @@ class ReportService {
       ),
     );
 
-    final output = await getTemporaryDirectory();
-    final file = File("${output.path}/report_${DateTime.now().millisecondsSinceEpoch}.pdf");
-    await file.writeAsBytes(await pdf.save());
-    return file;
+    return pdf.save();
   }
 }

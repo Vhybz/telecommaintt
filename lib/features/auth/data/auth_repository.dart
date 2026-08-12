@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:foundation';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,6 +9,11 @@ final userProfileProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
   final user = authRepo.currentUser;
   if (user == null) return null;
   return await authRepo.getUserProfile(user.id);
+});
+
+final rolesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final authRepo = ref.watch(authRepositoryProvider);
+  return await authRepo.getRoles();
 });
 
 class AuthRepository {
@@ -27,6 +32,7 @@ class AuthRepository {
     required String email,
     required String password,
     required String fullName,
+    required int roleId,
     String? phone,
     String? profession,
   }) async {
@@ -37,6 +43,7 @@ class AuthRepository {
         'full_name': fullName,
         'phone': phone,
         'profession': profession,
+        'role_id': roleId,
       },
     );
   }
@@ -45,14 +52,13 @@ class AuthRepository {
     await _client.auth.signOut();
   }
 
-  Future<String?> uploadAvatar(String filePath, String userId) async {
-    final file = File(filePath);
-    final fileExtension = filePath.split('.').last;
+  Future<String?> uploadAvatar(Uint8List bytes, String fileName, String userId) async {
+    final fileExtension = fileName.split('.').last;
     final path = '$userId/avatar.$fileExtension';
 
-    await _client.storage.from('avatars').upload(
+    await _client.storage.from('avatars').uploadBytes(
       path,
-      file,
+      bytes,
       fileOptions: const FileOptions(upsert: true),
     );
 
@@ -92,5 +98,10 @@ class AuthRepository {
     } catch (e) {
       return null;
     }
+  }
+
+  Future<List<Map<String, dynamic>>> getRoles() async {
+    final response = await _client.from('roles').select().order('id');
+    return List<Map<String, dynamic>>.from(response);
   }
 }

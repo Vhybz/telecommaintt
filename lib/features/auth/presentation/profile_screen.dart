@@ -54,7 +54,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     try {
       final user = ref.read(authRepositoryProvider).currentUser;
       if (user != null) {
-        await ref.read(authRepositoryProvider).uploadAvatar(image.path, user.id);
+        final bytes = await image.readAsBytes();
+        await ref.read(authRepositoryProvider).uploadAvatar(bytes, image.name, user.id);
         await _fetchProfile(); // Refresh profile to show new image
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
