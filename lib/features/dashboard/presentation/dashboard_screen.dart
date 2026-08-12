@@ -21,6 +21,9 @@ import '../../predictions/data/prediction_repository.dart';
 import '../../predictions/data/model_metadata_repository.dart';
 import '../../faults/data/fault_repository.dart';
 
+final dashboardMapControllerProvider = StateProvider<google.GoogleMapController?>((ref) => null);
+final dashboardMapCenterProvider = StateProvider<google.LatLng>((ref) => const google.LatLng(7.9465, -1.0232)); // Center of Ghana
+
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
@@ -102,28 +105,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
       child: Row(
         children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Predictive Maintenance Dashboard',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.5),
-              ),
-              profileAsync.when(
-                data: (profile) => Text(
-                  'Welcome back, ${profile?['full_name'] ?? 'User'} 👋',
-                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Predictive Maintenance Dashboard',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                loading: () => const SizedBox(height: 12, width: 100, child: LinearProgressIndicator()),
-                error: (_, error) => Text(
-                  'Welcome back 👋',
-                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                profileAsync.when(
+                  data: (profile) => Text(
+                    'Welcome back, ${profile?['full_name'] ?? 'User'} 👋',
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  loading: () => const SizedBox(height: 12, width: 100, child: LinearProgressIndicator()),
+                  error: (_, error) => Text(
+                    'Welcome back 👋',
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const Spacer(),
+          const SizedBox(width: 16),
           // Date & Time
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -296,13 +303,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
         return LayoutBuilder(builder: (context, constraints) {
           int crossAxisCount = constraints.maxWidth > 1400 ? 5 : (constraints.maxWidth > 900 ? 3 : 2);
+          // Lower aspect ratio gives more height to cards to prevent bottom overflow
+          double aspectRatio = constraints.maxWidth > 1400 ? 2.0 : 1.8;
+          
           return GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 2.2,
+            childAspectRatio: aspectRatio,
             children: [
               _buildStatCard('Total Base Stations', total.toString(), Icons.cell_tower, Theme.of(context).colorScheme.primary, 'All Sites'),
               _buildStatCard('Healthy Stations', healthy.toString(), Icons.check_circle_outline, AppColors.success, '$healthyPercent%'),
@@ -439,7 +449,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   children: [
                     _buildTableHeader(),
                     ...displayPredictions.map((p) => _buildTableRow(
-                      p.stationId.length > 8 ? p.stationId.substring(0, 8) : p.stationId,
+                      (p.stationId != null && p.stationId!.length > 8) ? p.stationId!.substring(0, 8) : (p.stationId ?? 'Unknown'),
                       p.faultType,
                       '${(p.probability * 100).toStringAsFixed(0)}%',
                       p.riskLevel,
@@ -675,48 +685,115 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildMiniMap() {
+    final stationsAsync = ref.watch(stationsProvider);
+    final predictionsAsync = ref.watch(predictionsProvider);
+    final mapCenter = ref.watch(dashboardMapCenterProvider);
+
     return Card(
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
-        height: 260,
-        child: Stack(
-          children: [
-            // Embedded real map for Sunyani STU
-            Positioned.fill(
-              child: google.GoogleMap(
-                initialCameraPosition: const google.CameraPosition(
-                  target: google.LatLng(7.3349, -2.3124), // Sunyani Technical University
-                  zoom: 15,
+        height: 280,
+        child: stationsAsync.when(
+          data: (stations) {
+            final predictions = predictionsAsync.asData?.value ?? [];
+            
+            // Create markers for all stations
+            final markers = stations.where((s) => s.latitude != null && s.longitude != null).map((station) {
+              // Find latest prediction for this station
+              final stationPrediction = predictions.where((p) => p.stationId == station.id).firstOrNull;
+              
+              double hue = google.BitmapDescriptor.hueAzure;
+              if (stationPrediction != null) {
+                switch (stationPrediction.riskLevel) {
+                  case 'High': hue = google.BitmapDescriptor.hueRed; break;
+                  case 'Medium': hue = google.BitmapDescriptor.hueOrange; break;
+                  case 'Low': hue = google.BitmapDescriptor.hueGreen; break;
+                }
+              }
+
+              return google.Marker(
+                markerId: google.MarkerId(station.id),
+                position: google.LatLng(station.latitude!, station.longitude!),
+                icon: google.BitmapDescriptor.defaultMarkerWithHue(hue),
+                infoWindow: google.InfoWindow(
+                  title: station.name,
+                  snippet: stationPrediction != null 
+                    ? 'Risk: ${stationPrediction.riskLevel} (${stationPrediction.faultType})'
+                    : 'Status: ${station.status}',
                 ),
-                myLocationButtonEnabled: false,
-                zoomControlsEnabled: false,
-                mapType: google.MapType.hybrid,
-                markers: {
-                  const google.Marker(
-                    markerId: google.MarkerId('stu'),
-                    position: google.LatLng(7.3349, -2.3124),
-                    infoWindow: google.InfoWindow(title: 'Sunyani STU Hub'),
+              );
+            }).toSet();
+
+            return Stack(
+              children: [
+                google.GoogleMap(
+                  initialCameraPosition: google.CameraPosition(
+                    target: mapCenter,
+                    zoom: 6.5,
                   ),
-                },
-              ),
-            ),
-            Positioned(
-              top: 16,
-              left: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), blurRadius: 4),
-                  ],
+                  onMapCreated: (controller) => ref.read(dashboardMapControllerProvider.notifier).state = controller,
+                  myLocationButtonEnabled: false,
+                  zoomControlsEnabled: false,
+                  mapType: google.MapType.normal,
+                  markers: markers,
                 ),
-                child: Text('Sunyani STU Hub Status', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-              ),
-            ),
-          ],
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), blurRadius: 4),
+                      ],
+                    ),
+                    child: Text('Live Network Risk Map', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                  ),
+                ),
+                // Legend Overlay
+                Positioned(
+                  bottom: 16,
+                  right: 16,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildMapLegendItem('High Risk', Colors.red),
+                        _buildMapLegendItem('Medium Risk', Colors.orange),
+                        _buildMapLegendItem('Healthy', Colors.green),
+                        _buildMapLegendItem('No Data', Colors.blue),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, _) => Center(child: Text('Map Error: $err')),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMapLegendItem(String label, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          const SizedBox(width: 8),
+          Text(label, style: const TextStyle(fontSize: 10)),
+        ],
       ),
     );
   }

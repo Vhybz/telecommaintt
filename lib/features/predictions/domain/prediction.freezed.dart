@@ -23,7 +23,7 @@ Prediction _$PredictionFromJson(Map<String, dynamic> json) {
 mixin _$Prediction {
   String get id => throw _privateConstructorUsedError;
   @JsonKey(name: 'station_id')
-  String get stationId => throw _privateConstructorUsedError;
+  String? get stationId => throw _privateConstructorUsedError;
   @JsonKey(name: 'equipment_id')
   String? get equipmentId => throw _privateConstructorUsedError;
   @JsonKey(name: 'fault_type')
@@ -55,7 +55,7 @@ abstract class $PredictionCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    @JsonKey(name: 'station_id') String stationId,
+    @JsonKey(name: 'station_id') String? stationId,
     @JsonKey(name: 'equipment_id') String? equipmentId,
     @JsonKey(name: 'fault_type') String faultType,
     double probability,
@@ -81,7 +81,7 @@ class _$PredictionCopyWithImpl<$Res, $Val extends Prediction>
   @override
   $Res call({
     Object? id = null,
-    Object? stationId = null,
+    Object? stationId = freezed,
     Object? equipmentId = freezed,
     Object? faultType = null,
     Object? probability = null,
@@ -95,10 +95,10 @@ class _$PredictionCopyWithImpl<$Res, $Val extends Prediction>
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
                       as String,
-            stationId: null == stationId
+            stationId: freezed == stationId
                 ? _value.stationId
                 : stationId // ignore: cast_nullable_to_non_nullable
-                      as String,
+                      as String?,
             equipmentId: freezed == equipmentId
                 ? _value.equipmentId
                 : equipmentId // ignore: cast_nullable_to_non_nullable
@@ -140,7 +140,7 @@ abstract class _$$PredictionImplCopyWith<$Res>
   @useResult
   $Res call({
     String id,
-    @JsonKey(name: 'station_id') String stationId,
+    @JsonKey(name: 'station_id') String? stationId,
     @JsonKey(name: 'equipment_id') String? equipmentId,
     @JsonKey(name: 'fault_type') String faultType,
     double probability,
@@ -165,7 +165,7 @@ class __$$PredictionImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? stationId = null,
+    Object? stationId = freezed,
     Object? equipmentId = freezed,
     Object? faultType = null,
     Object? probability = null,
@@ -179,10 +179,10 @@ class __$$PredictionImplCopyWithImpl<$Res>
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
                   as String,
-        stationId: null == stationId
+        stationId: freezed == stationId
             ? _value.stationId
             : stationId // ignore: cast_nullable_to_non_nullable
-                  as String,
+                  as String?,
         equipmentId: freezed == equipmentId
             ? _value.equipmentId
             : equipmentId // ignore: cast_nullable_to_non_nullable
@@ -217,7 +217,7 @@ class __$$PredictionImplCopyWithImpl<$Res>
 class _$PredictionImpl implements _Prediction {
   const _$PredictionImpl({
     required this.id,
-    @JsonKey(name: 'station_id') required this.stationId,
+    @JsonKey(name: 'station_id') this.stationId,
     @JsonKey(name: 'equipment_id') this.equipmentId,
     @JsonKey(name: 'fault_type') required this.faultType,
     required this.probability,
@@ -233,7 +233,7 @@ class _$PredictionImpl implements _Prediction {
   final String id;
   @override
   @JsonKey(name: 'station_id')
-  final String stationId;
+  final String? stationId;
   @override
   @JsonKey(name: 'equipment_id')
   final String? equipmentId;
@@ -310,7 +310,7 @@ class _$PredictionImpl implements _Prediction {
 abstract class _Prediction implements Prediction {
   const factory _Prediction({
     required final String id,
-    @JsonKey(name: 'station_id') required final String stationId,
+    @JsonKey(name: 'station_id') final String? stationId,
     @JsonKey(name: 'equipment_id') final String? equipmentId,
     @JsonKey(name: 'fault_type') required final String faultType,
     required final double probability,
@@ -326,7 +326,7 @@ abstract class _Prediction implements Prediction {
   String get id;
   @override
   @JsonKey(name: 'station_id')
-  String get stationId;
+  String? get stationId;
   @override
   @JsonKey(name: 'equipment_id')
   String? get equipmentId;

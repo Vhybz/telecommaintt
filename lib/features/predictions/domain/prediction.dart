@@ -7,7 +7,7 @@ part 'prediction.g.dart';
 abstract class Prediction with _$Prediction {
   const factory Prediction({
     required String id,
-    @JsonKey(name: 'station_id') required String stationId,
+    @JsonKey(name: 'station_id') String? stationId,
     @JsonKey(name: 'equipment_id') String? equipmentId,
     @JsonKey(name: 'fault_type') required String faultType,
     required double probability,

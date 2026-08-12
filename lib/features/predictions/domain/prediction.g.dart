@@ -9,7 +9,7 @@ part of 'prediction.dart';
 _$PredictionImpl _$$PredictionImplFromJson(Map<String, dynamic> json) =>
     _$PredictionImpl(
       id: json['id'] as String,
-      stationId: json['station_id'] as String,
+      stationId: json['station_id'] as String?,
       equipmentId: json['equipment_id'] as String?,
       faultType: json['fault_type'] as String,
       probability: (json['probability'] as num).toDouble(),

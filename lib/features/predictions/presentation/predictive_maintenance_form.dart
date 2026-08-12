@@ -3,10 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as google;
 import '../../stations/data/station_repository.dart';
 import '../../faults/data/fault_repository.dart';
 import '../data/prediction_repository.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../dashboard/presentation/dashboard_screen.dart';
 
 class PredictiveMaintenanceForm extends ConsumerStatefulWidget {
   const PredictiveMaintenanceForm({super.key});
@@ -51,6 +53,25 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
   ];
   
   String? _selectedRegion = "GREATER ACCRA";
+
+  final Map<String, google.LatLng> _regionCenters = {
+    "AHAFO": const google.LatLng(7.0911, -2.4833),
+    "ASHANTI": const google.LatLng(6.7000, -1.5333),
+    "BONO": const google.LatLng(7.5833, -2.5000),
+    "BONO EAST": const google.LatLng(7.7500, -1.0500),
+    "CENTRAL": const google.LatLng(5.5000, -1.2000),
+    "EASTERN": const google.LatLng(6.5000, -0.4333),
+    "GREATER ACCRA": const google.LatLng(5.6037, -0.1870),
+    "NORTH EAST": const google.LatLng(10.3333, -0.5000),
+    "NORTHERN": const google.LatLng(9.5000, -1.0000),
+    "OTI": const google.LatLng(8.0000, 0.5000),
+    "SAVANNAH": const google.LatLng(9.0833, -1.8333),
+    "UPPER EAST": const google.LatLng(10.8333, -0.8333),
+    "UPPER WEST": const google.LatLng(10.3333, -2.1667),
+    "VOLTA": const google.LatLng(6.5000, 0.5000),
+    "WESTERN": const google.LatLng(5.5000, -2.2500),
+    "WESTERN NORTH": const google.LatLng(6.2500, -2.8000),
+  };
 
   @override
   void dispose() {
@@ -141,7 +162,16 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
 
           // 4. Refresh global state to make all other screens work based on the new prediction
           ref.invalidate(predictionsProvider);
-          ref.invalidate(stationsProvider); // In case health status changed (not directly linked yet but good practice)
+          ref.invalidate(stationsProvider);
+
+          // 5. Update Map Focus on Dashboard
+          if (_selectedRegion != null && _regionCenters.containsKey(_selectedRegion)) {
+            final target = _regionCenters[_selectedRegion]!;
+            ref.read(dashboardMapCenterProvider.notifier).state = target;
+            
+            final controller = ref.read(dashboardMapControllerProvider);
+            controller?.animateCamera(google.CameraUpdate.newLatLngZoom(target, 10));
+          }
 
           if (!mounted) return;
           
