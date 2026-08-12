@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
@@ -9,11 +10,13 @@ import 'routes/app_router.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Supabase (Uncomment and provide values in AppConstants when ready)
-  // Initialize Supabase with placeholders to prevent crashes
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+  
+  // Initialize Supabase
   await Supabase.initialize(
-    url: 'https://placeholder.supabase.co',
-    anonKey: 'placeholder-key', // ignore: deprecated_member_use
+    url: dotenv.env['SUPABASE_URL'] ?? 'https://placeholder.supabase.co',
+    publishableKey: dotenv.env['SUPABASE_ANON_KEY'] ?? 'placeholder-key',
   );
 
   runApp(

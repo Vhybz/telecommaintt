@@ -1,11 +1,13 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class AppConstants {
   static const String appName = 'Telecom AI';
   static const String appVersion = '1.0.0';
   
-  // Supabase (Replace with actual values)
-  static const String supabaseUrl = 'YOUR_ACTUAL_SUPABASE_URL';
-  static const String supabaseAnonKey = 'YOUR_ACTUAL_SUPABASE_ANON_KEY';
+  // Supabase
+  static String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? '';
+  static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? '';
   
   // ML API
-  static const String mlApiBaseUrl = 'http://localhost:8000';
+  static String get mlApiBaseUrl => dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000';
 }

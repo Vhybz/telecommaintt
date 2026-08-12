@@ -20,13 +20,16 @@ CREATE TABLE regions (
 );
 
 INSERT INTO regions (name) VALUES
-('Greater Accra'), ('Ashanti'), ('Central'), ('Western'), ('Eastern'),
-('Northern'), ('Volta'), ('Upper East'), ('Upper West'), ('Bono');
+('Greater Accra'), ('Ashanti'), ('Western'), ('Central'), ('Eastern'),
+('Northern'), ('Volta'), ('Upper East'), ('Upper West'), ('Bono'),
+('Bono East'), ('Ahafo'), ('Savannah'), ('North East'), ('Oti'), ('Western North');
 
 -- PROFILES TABLE
 CREATE TABLE profiles (
     id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
     full_name TEXT,
+    phone TEXT,
+    profession TEXT,
     role_id INTEGER REFERENCES roles(id) DEFAULT 3,
     region_id INTEGER REFERENCES regions(id),
     avatar_url TEXT,
@@ -128,25 +131,23 @@ CREATE TABLE maintenance_tasks (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ROW LEVEL SECURITY (RLS)
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE base_stations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE equipment ENABLE ROW LEVEL SECURITY;
-ALTER TABLE kpi_records ENABLE ROW LEVEL SECURITY;
-ALTER TABLE alarm_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE predictions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE maintenance_tasks ENABLE ROW LEVEL SECURITY;
+-- ROW LEVEL SECURITY (RLS) - DISABLED
+ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE base_stations DISABLE ROW LEVEL SECURITY;
+ALTER TABLE equipment DISABLE ROW LEVEL SECURITY;
+ALTER TABLE kpi_records DISABLE ROW LEVEL SECURITY;
+ALTER TABLE alarm_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE predictions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE maintenance_tasks DISABLE ROW LEVEL SECURITY;
 
--- POLICIES
--- Profiles: Users can view all profiles, but only update their own
-CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
-CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+-- STORAGE BUCKET FOR AVATARS
+-- This ensures the bucket exists for profile pictures
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
 
--- Base Stations: Viewable by all authenticated users
-CREATE POLICY "Stations are viewable by all users" ON base_stations FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Only admins can modify stations" ON base_stations ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role_id = 1)
-);
+-- STORAGE POLICIES (Public access for simplicity as requested)
+CREATE POLICY "Public Access" ON storage.objects FOR ALL USING (bucket_id = 'avatars');
 
 -- Functions and Triggers for updated_at
 CREATE OR REPLACE FUNCTION handle_updated_at()
@@ -165,8 +166,15 @@ CREATE TRIGGER on_maintenance_tasks_updated BEFORE UPDATE ON maintenance_tasks F
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.profiles (id, full_name, avatar_url, role_id)
-    VALUES (NEW.id, NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'avatar_url', 3);
+    INSERT INTO public.profiles (id, full_name, phone, profession, avatar_url, role_id)
+    VALUES (
+        NEW.id,
+        NEW.raw_user_meta_data->>'full_name',
+        NEW.raw_user_meta_data->>'phone',
+        NEW.raw_user_meta_data->>'profession',
+        NEW.raw_user_meta_data->>'avatar_url',
+        3
+    );
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

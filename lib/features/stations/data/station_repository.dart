@@ -6,48 +6,7 @@ final stationRepositoryProvider = Provider((ref) => StationRepository(Supabase.i
 
 final stationsProvider = FutureProvider<List<BaseStation>>((ref) async {
   final repository = ref.watch(stationRepositoryProvider);
-  try {
-    return await repository.getStations();
-  } catch (e) {
-    return [
-      BaseStation(
-        id: '1', 
-        name: 'Accra Central Hub', 
-        siteId: 'GH-ACC-001', 
-        status: 'Online', 
-        regionId: 1, // Greater Accra
-        latitude: 5.6037,
-        longitude: -0.1870,
-      ),
-      BaseStation(
-        id: '2', 
-        name: 'Kumasi Industrial', 
-        siteId: 'GH-KMS-042', 
-        status: 'Offline', 
-        regionId: 2, // Ashanti
-        latitude: 6.6666,
-        longitude: -1.6163,
-      ),
-      BaseStation(
-        id: '3', 
-        name: 'Takoradi Port', 
-        siteId: 'GH-TKD-012', 
-        status: 'Online', 
-        regionId: 3, // Western
-        latitude: 4.8917,
-        longitude: -1.7500,
-      ),
-      BaseStation(
-        id: '4', 
-        name: 'Tamale North', 
-        siteId: 'GH-TML-088', 
-        status: 'Online', 
-        regionId: 4, // Northern
-        latitude: 9.4034,
-        longitude: -0.8424,
-      ),
-    ];
-  }
+  return await repository.getStations();
 });
 
 class StationRepository {

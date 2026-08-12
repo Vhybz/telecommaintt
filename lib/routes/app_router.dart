@@ -16,7 +16,15 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/splash',
     refreshListenable: AuthListenable(authRepository.authStateChanges),
     redirect: (context, state) {
-      // Bypass session check for UI-only development
+      final isLoggedIn = Supabase.instance.client.auth.currentSession != null;
+      final isLoggingIn = state.matchedLocation == '/login' || 
+                         state.matchedLocation == '/signup' || 
+                         state.matchedLocation == '/splash' ||
+                         state.matchedLocation == '/onboarding';
+
+      if (!isLoggedIn && !isLoggingIn) return '/login';
+      if (isLoggedIn && isLoggingIn) return '/dashboard';
+      
       return null;
     },
     routes: [
@@ -35,6 +43,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/signup',
+        builder: (context, state) => const SignUpScreen(),
       ),
       GoRoute(
         path: '/dashboard',

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 from typing import List, Optional
@@ -7,6 +8,15 @@ from typing import List, Optional
 from predict import FaultPredictor
 
 app = FastAPI(title="Telecom Predictive Maintenance API")
+
+# Add CORS middleware to allow requests from Flutter Web (localhost) and other origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize the predictor using the current directory for artifacts
 current_dir = os.path.dirname(os.path.abspath(__file__))

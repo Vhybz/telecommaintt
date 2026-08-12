@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../data/auth_repository.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -28,12 +29,32 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
     setState(() => _isLoading = true);
     
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
-    
-    if (mounted) {
-      setState(() => _isLoading = false);
-      context.go('/dashboard');
+    try {
+      final authRepo = ref.read(authRepositoryProvider);
+      final fullName = "${_firstNameController.text} ${_surnameController.text}";
+      
+      await authRepo.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        fullName: fullName,
+        phone: _phoneController.text.trim(),
+        profession: _professionController.text.trim(),
+      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Verification email sent! Please check your inbox.')),
+        );
+        context.go('/login');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -127,6 +148,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                                 controller: _firstNameController,
                                 label: 'First Name',
                                 icon: Icons.person_outline,
+                                textCapitalization: TextCapitalization.words,
                                 validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
                               ),
                             ),
@@ -136,6 +158,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                                 controller: _surnameController,
                                 label: 'Surname',
                                 icon: Icons.person_outline,
+                                textCapitalization: TextCapitalization.words,
                                 validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
                               ),
                             ),
@@ -147,6 +170,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                           controller: _professionController,
                           label: 'Profession',
                           icon: Icons.work_outline,
+                          textCapitalization: TextCapitalization.sentences,
                           validator: (v) => v?.isEmpty ?? true ? 'Enter profession' : null,
                         ),
                         const SizedBox(height: 20),
@@ -166,6 +190,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                           label: 'Email Address',
                           icon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
+                          inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
                           validator: (v) {
                             if (v == null || !v.contains('@')) return 'Enter valid email';
                             return null;
@@ -178,6 +203,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                           label: 'Password',
                           icon: Icons.lock_outline,
                           obscureText: true,
+                          inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
                           validator: (v) => (v?.length ?? 0) < 6 ? 'Min 6 characters' : null,
                         ),
                         const SizedBox(height: 20),
@@ -187,6 +213,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                           label: 'Confirm Password',
                           icon: Icons.lock_clock_outlined,
                           obscureText: true,
+                          textInputAction: TextInputAction.done,
+                          inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
                           validator: (v) {
                             if (v != _passwordController.text) return 'Passwords do not match';
                             return null;
@@ -237,6 +265,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     required IconData icon,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+    TextInputAction textInputAction = TextInputAction.next,
     bool obscureText = false,
     String? Function(String?)? validator,
   }) {
@@ -245,6 +275,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       obscureText: obscureText,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
+      textCapitalization: textCapitalization,
+      textInputAction: textInputAction,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon),

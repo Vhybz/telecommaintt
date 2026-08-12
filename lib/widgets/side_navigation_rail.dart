@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../core/theme/app_colors.dart';
-import '../core/theme/theme_provider.dart';
+import 'package:telecomf/core/theme/app_colors.dart';
+import 'package:telecomf/core/theme/theme_provider.dart';
+import 'package:telecomf/features/auth/data/auth_repository.dart';
 
 class SideNavigationRail extends ConsumerWidget {
   final int selectedIndex;
@@ -17,6 +18,7 @@ class SideNavigationRail extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final primaryColor = Theme.of(context).colorScheme.primary;
+    final profileAsync = ref.watch(userProfileProvider);
 
     return Container(
       width: MediaQuery.of(context).size.width > 1200 ? 260 : 80,
@@ -80,11 +82,11 @@ class SideNavigationRail extends ConsumerWidget {
                 _buildNavItem(context, ref, Icons.router_outlined, Icons.router, 'Base Stations', 1),
                 _buildNavItem(context, ref, Icons.warning_amber_outlined, Icons.warning, 'Alerts', 4),
                 _buildNavItem(context, ref, Icons.online_prediction_outlined, Icons.online_prediction, 'Predictions', 5),
+                _buildNavItem(context, ref, Icons.add_chart_outlined, Icons.add_chart, 'Run Prediction', 9),
                 _buildNavItem(context, ref, Icons.description_outlined, Icons.description, 'Reports', 7),
                 _buildNavItem(context, ref, Icons.build_outlined, Icons.build, 'Maintenance', 6),
-                _buildNavItem(context, ref, Icons.map_outlined, Icons.map, 'Map View', 1), // Using same index for now
                 _buildNavItem(context, ref, Icons.settings_outlined, Icons.settings, 'Settings', 8),
-                _buildNavItem(context, ref, Icons.person_outline, Icons.person, 'Profile', 8), // Placeholder index
+                _buildNavItem(context, ref, Icons.person_outline, Icons.person, 'Profile', 10),
               ],
             ),
           ),
@@ -93,46 +95,59 @@ class SideNavigationRail extends ConsumerWidget {
           if (MediaQuery.of(context).size.width > 1200)
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: primaryColor,
-                      child: const Icon(Icons.person, color: Colors.white, size: 24),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Kofi Mensah',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                            overflow: TextOverflow.ellipsis,
+              child: InkWell(
+                onTap: () => onDestinationSelected(10),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: profileAsync.when(
+                    data: (profile) => Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: primaryColor,
+                          backgroundImage: profile?['avatar_url'] != null 
+                              ? NetworkImage(profile!['avatar_url']) 
+                              : null,
+                          child: profile?['avatar_url'] == null 
+                              ? const Icon(Icons.person, color: Colors.white, size: 24)
+                              : null,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                profile?['full_name'] ?? 'User',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                profile?['roles']?['name'] ?? 'Staff',
+                                style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                              ),
+                            ],
                           ),
-                          Text(
-                            'Network Admin',
-                            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        ),
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: AppColors.success,
+                            shape: BoxShape.circle,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ],
+                    loading: () => const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+                    error: (_, error) => const Icon(Icons.error_outline, size: 20),
+                  ),
                 ),
               ),
             ),
@@ -144,7 +159,12 @@ class SideNavigationRail extends ConsumerWidget {
             title: MediaQuery.of(context).size.width > 1200 
                 ? const Text('Logout', style: TextStyle(color: AppColors.error, fontSize: 14)) 
                 : null,
-            onTap: () => context.go('/signup'),
+            onTap: () async {
+              await ref.read(authRepositoryProvider).signOut();
+              if (context.mounted) {
+                context.go('/login');
+              }
+            },
           ),
           const SizedBox(height: 16),
         ],

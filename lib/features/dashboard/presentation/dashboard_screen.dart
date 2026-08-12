@@ -5,6 +5,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as google;
 import '../../stations/presentation/station_list_screen.dart';
 import '../../faults/presentation/fault_list_screen.dart';
 import '../../predictions/presentation/prediction_list_screen.dart';
+import '../../predictions/presentation/predictive_maintenance_form.dart';
+import '../../auth/presentation/profile_screen.dart';
 import '../../equipment/presentation/equipment_list_screen.dart';
 import '../../kpis/presentation/kpis_screen.dart';
 import '../../maintenance/presentation/maintenance_screen.dart';
@@ -13,6 +15,11 @@ import '../../settings/presentation/settings_screen.dart';
 import '../../../widgets/side_navigation_rail.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../auth/data/auth_repository.dart';
+import '../../stations/data/station_repository.dart';
+import '../../predictions/data/prediction_repository.dart';
+import '../../predictions/data/model_metadata_repository.dart';
+import '../../faults/data/fault_repository.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -44,6 +51,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return const ReportsScreen();
       case 8:
         return const SettingsScreen();
+      case 9:
+        return const PredictiveMaintenanceForm();
+      case 10:
+        return const ProfileScreen();
       default:
         return Center(child: Text('Module ${_selectedIndex + 1} Coming Soon'));
     }
@@ -76,6 +87,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
 
   Widget _buildAppBar() {
+    final profileAsync = ref.watch(userProfileProvider);
+    
     return Container(
       height: 80,
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -97,9 +110,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 'Predictive Maintenance Dashboard',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.5),
               ),
-              Text(
-                'Welcome back, Kofi Mensah 👋',
-                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              profileAsync.when(
+                data: (profile) => Text(
+                  'Welcome back, ${profile?['full_name'] ?? 'User'} 👋',
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
+                loading: () => const SizedBox(height: 12, width: 100, child: LinearProgressIndicator()),
+                error: (_, error) => Text(
+                  'Welcome back 👋',
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
               ),
             ],
           ),
@@ -115,9 +135,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               children: [
                 Icon(Icons.calendar_today_outlined, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 const SizedBox(width: 8),
-                const Text(
-                  '18 May 2024, 10:30 AM',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                Text(
+                  '${DateTime.now().day} ${_getMonth(DateTime.now().month)} ${DateTime.now().year}, ${_formatTime(DateTime.now())}',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -159,14 +179,38 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ],
           ),
           const SizedBox(width: 16),
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            child: const Icon(Icons.person, color: Colors.white, size: 22),
+          GestureDetector(
+            onTap: () => setState(() => _selectedIndex = 10),
+            child: profileAsync.when(
+              data: (profile) => CircleAvatar(
+                radius: 18,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                backgroundImage: profile?['avatar_url'] != null 
+                    ? NetworkImage(profile!['avatar_url']) 
+                    : null,
+                child: profile?['avatar_url'] == null 
+                    ? const Icon(Icons.person, color: Colors.white, size: 22)
+                    : null,
+              ),
+              loading: () => const CircleAvatar(radius: 18, child: CircularProgressIndicator()),
+              error: (_, error) => const CircleAvatar(radius: 18, child: Icon(Icons.person)),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  String _getMonth(int month) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[month - 1];
+  }
+
+  String _formatTime(DateTime dt) {
+    final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+    final minute = dt.minute.toString().padLeft(2, '0');
+    return '$hour:$minute $ampm';
   }
 
   Widget _buildDashboardOverview() {
@@ -175,6 +219,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildAIInsightsHeader(),
+          const SizedBox(height: 24),
           _buildStatCardsRow(),
           const SizedBox(height: 24),
           _buildMainDashboardGrid(),
@@ -183,25 +229,103 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  Widget _buildAIInsightsHeader() {
+    final predictionsAsync = ref.watch(predictionsProvider);
+    
+    return predictionsAsync.when(
+      data: (predictions) {
+        if (predictions.isEmpty) return const SizedBox.shrink();
+        
+        final topFault = predictions.first.faultType;
+        final highRiskCount = predictions.where((p) => p.riskLevel == 'High').length;
+        
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                Theme.of(context).colorScheme.secondary.withValues(alpha: 0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('AI Maintenance Insights', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    Text(
+                      highRiskCount > 0 
+                        ? 'Urgent: $highRiskCount high-risk potential faults detected. Primary concern: $topFault.'
+                        : 'System stable. Next predicted maintenance event likely related to $topFault.',
+                      style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () => setState(() => _selectedIndex = 5),
+                child: const Text('Analyze Patterns'),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, error) => const SizedBox.shrink(),
+    );
+  }
+
   Widget _buildStatCardsRow() {
-    return LayoutBuilder(builder: (context, constraints) {
-      int crossAxisCount = constraints.maxWidth > 1400 ? 5 : (constraints.maxWidth > 900 ? 3 : 2);
-      return GridView.count(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: crossAxisCount,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 2.2,
-        children: [
-          _buildStatCard('Total Base Stations', '125', Icons.cell_tower, Theme.of(context).colorScheme.primary, 'All Sites'),
-          _buildStatCard('Healthy Stations', '104', Icons.check_circle_outline, AppColors.success, '83.2%'),
-          _buildStatCard('Warning Stations', '15', Icons.warning_amber, AppColors.warning, '12.0%'),
-          _buildStatCard('Critical Stations', '6', Icons.error_outline, AppColors.error, '4.8%'),
-          _buildStatCard('Model Accuracy', '96.8%', Icons.psychology_outlined, AppColors.secondary, 'This Month'),
-        ],
-      );
-    });
+    final stationsAsync = ref.watch(stationsProvider);
+    final modelMetadataAsync = ref.watch(modelMetadataProvider);
+    
+    return stationsAsync.when(
+      data: (stations) {
+        final total = stations.length;
+        final healthy = stations.where((s) => s.status == 'Online').length;
+        final warning = stations.where((s) => s.status == 'Degraded' || s.status == 'Maintenance').length;
+        final critical = stations.where((s) => s.status == 'Offline').length;
+        final healthyPercent = total > 0 ? (healthy / total * 100).toStringAsFixed(1) : '0';
+
+        return LayoutBuilder(builder: (context, constraints) {
+          int crossAxisCount = constraints.maxWidth > 1400 ? 5 : (constraints.maxWidth > 900 ? 3 : 2);
+          return GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 2.2,
+            children: [
+              _buildStatCard('Total Base Stations', total.toString(), Icons.cell_tower, Theme.of(context).colorScheme.primary, 'All Sites'),
+              _buildStatCard('Healthy Stations', healthy.toString(), Icons.check_circle_outline, AppColors.success, '$healthyPercent%'),
+              _buildStatCard('Warning Stations', warning.toString(), Icons.warning_amber, AppColors.warning, '${total > 0 ? (warning / total * 100).toStringAsFixed(1) : '0'}%'),
+              _buildStatCard('Critical Stations', critical.toString(), Icons.error_outline, AppColors.error, '${total > 0 ? (critical / total * 100).toStringAsFixed(1) : '0'}%'),
+              modelMetadataAsync.when(
+                data: (metadata) => _buildStatCard(
+                  'Model Accuracy', 
+                  '${(metadata.cvResults['mean']['accuracy'] * 100).toStringAsFixed(1)}%', 
+                  Icons.psychology_outlined, 
+                  AppColors.secondary, 
+                  'v${metadata.version}'
+                ),
+                loading: () => _buildStatCard('Model Accuracy', '...', Icons.psychology_outlined, AppColors.secondary, 'Loading...'),
+                error: (_, error) => _buildStatCard('Model Accuracy', 'N/A', Icons.psychology_outlined, AppColors.secondary, 'Error'),
+              ),
+            ],
+          );
+        });
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, error) => const Center(child: Text('Error loading stats')),
+    );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color, String subtitle) {
@@ -285,6 +409,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildFaultPredictionSummary() {
+    final predictionsAsync = ref.watch(predictionsProvider);
+    
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -299,26 +425,36 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            Table(
-              columnWidths: const {
-                0: FlexColumnWidth(1),
-                1: FlexColumnWidth(2),
-                2: FlexColumnWidth(1),
-                3: FlexColumnWidth(1),
-                4: FlexColumnWidth(1),
+            predictionsAsync.when(
+              data: (predictions) {
+                final displayPredictions = predictions.take(5).toList();
+                return Table(
+                  columnWidths: const {
+                    0: FlexColumnWidth(1.2),
+                    1: FlexColumnWidth(2),
+                    2: FlexColumnWidth(1),
+                    3: FlexColumnWidth(1),
+                    4: FlexColumnWidth(1),
+                  },
+                  children: [
+                    _buildTableHeader(),
+                    ...displayPredictions.map((p) => _buildTableRow(
+                      p.stationId.length > 8 ? p.stationId.substring(0, 8) : p.stationId,
+                      p.faultType,
+                      '${(p.probability * 100).toStringAsFixed(0)}%',
+                      p.riskLevel,
+                      'New',
+                    )),
+                  ],
+                );
               },
-              children: [
-                _buildTableHeader(),
-                _buildTableRow('BS-022', 'Battery Failure', '95%', 'Critical', 'New'),
-                _buildTableRow('BS-008', 'Cooling System', '87%', 'Warning', 'New'),
-                _buildTableRow('BS-031', 'RF Power Low', '78%', 'Warning', 'New'),
-                _buildTableRow('BS-014', 'High Temp', '65%', 'Warning', 'Ack'),
-              ],
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, _) => Center(child: Text('Error loading predictions: $err')),
             ),
             const SizedBox(height: 16),
             Center(
               child: TextButton(
-                onPressed: () {},
+                onPressed: () => setState(() => _selectedIndex = 5),
                 child: const Text('View All Predictions →'),
               ),
             ),
@@ -367,46 +503,63 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildEquipmentHealthOverview() {
+    final stationsAsync = ref.watch(stationsProvider);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Equipment Health Overview', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 200,
-              child: Stack(
-                children: [
-                  PieChart(
-                    PieChartData(
-                      sectionsSpace: 0,
-                      centerSpaceRadius: 70,
-                      sections: [
-                        PieChartSectionData(value: 83.2, color: AppColors.success, radius: 20, showTitle: false),
-                        PieChartSectionData(value: 12.0, color: AppColors.warning, radius: 20, showTitle: false),
-                        PieChartSectionData(value: 4.8, color: AppColors.error, radius: 20, showTitle: false),
-                      ],
-                    ),
+        child: stationsAsync.when(
+          data: (stations) {
+            final total = stations.length;
+            final healthy = stations.where((s) => s.status == 'Online').length;
+            final warning = stations.where((s) => s.status == 'Degraded' || s.status == 'Maintenance').length;
+            final critical = stations.where((s) => s.status == 'Offline').length;
+            
+            final healthyPercent = total > 0 ? (healthy / total * 100) : 0.0;
+            final warningPercent = total > 0 ? (warning / total * 100) : 0.0;
+            final criticalPercent = total > 0 ? (critical / total * 100) : 0.0;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Equipment Health Overview', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 200,
+                  child: Stack(
+                    children: [
+                      PieChart(
+                        PieChartData(
+                          sectionsSpace: 0,
+                          centerSpaceRadius: 70,
+                          sections: [
+                            PieChartSectionData(value: healthyPercent, color: AppColors.success, radius: 20, showTitle: false),
+                            PieChartSectionData(value: warningPercent, color: AppColors.warning, radius: 20, showTitle: false),
+                            PieChartSectionData(value: criticalPercent, color: AppColors.error, radius: 20, showTitle: false),
+                          ],
+                        ),
+                      ),
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('${healthyPercent.toStringAsFixed(1)}%', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                            Text('Healthy', style: TextStyle(fontSize: 12, color: AppColors.success, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('83.2%', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                        Text('Healthy', style: TextStyle(fontSize: 12, color: AppColors.success, fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            _buildLegendItem('Healthy', '104 (83.2%)', AppColors.success),
-            _buildLegendItem('Warning', '15 (12.0%)', AppColors.warning),
-            _buildLegendItem('Critical', '6 (4.8%)', AppColors.error),
-          ],
+                ),
+                const SizedBox(height: 20),
+                _buildLegendItem('Healthy', '$healthy (${healthyPercent.toStringAsFixed(1)}%)', AppColors.success),
+                _buildLegendItem('Warning', '$warning (${warningPercent.toStringAsFixed(1)}%)', AppColors.warning),
+                _buildLegendItem('Critical', '$critical (${criticalPercent.toStringAsFixed(1)}%)', AppColors.error),
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, _) => Center(child: Text('Error: $err')),
         ),
       ),
     );
@@ -428,6 +581,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildLatestAlerts() {
+    final alarmsAsync = ref.watch(alarmsProvider);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -438,18 +593,71 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Latest Alerts', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                TextButton(onPressed: () {}, child: const Text('View All', style: TextStyle(fontSize: 12))),
+                TextButton(onPressed: () => setState(() => _selectedIndex = 4), child: const Text('View All', style: TextStyle(fontSize: 12))),
               ],
             ),
             const SizedBox(height: 10),
-            _buildAlertTile('Critical Signal Loss', 'BS-044 • Sunyani Technical Univ.', 'Just now', AppColors.critical, Icons.signal_cellular_connected_no_internet_4_bar),
-            _buildAlertTile('High Temperature', 'BS-034 • Accra Central', '5 min ago', AppColors.error, Icons.thermostat),
-            _buildAlertTile('Low Battery Voltage', 'BS-021 • Kumasi Tech', '12 min ago', AppColors.warning, Icons.battery_alert),
-            _buildAlertTile('Cooling System Norm.', 'BS-007 • Cape Coast', '1 hr ago', AppColors.success, Icons.check_circle_outline),
+            alarmsAsync.when(
+              data: (alarms) {
+                final displayAlarms = alarms.take(4).toList();
+                return Column(
+                  children: displayAlarms.map((alarm) {
+                    Color color = _getSeverityColor(alarm.severity);
+                    IconData icon = _getSeverityIcon(alarm.severity);
+                    String timeAgo = _formatTimeAgo(alarm.createdAt);
+                    
+                    return _buildAlertTile(
+                      alarm.description,
+                      '${alarm.stationId} • Status: ${alarm.status}',
+                      timeAgo,
+                      color,
+                      icon,
+                    );
+                  }).toList(),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, _) => Center(child: Text('Error: $err')),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Color _getSeverityColor(String severity) {
+    switch (severity.toLowerCase()) {
+      case 'critical': return AppColors.critical;
+      case 'major':
+      case 'error': return AppColors.error;
+      case 'minor':
+      case 'warning': return AppColors.warning;
+      default: return AppColors.success;
+    }
+  }
+
+  IconData _getSeverityIcon(String severity) {
+    switch (severity.toLowerCase()) {
+      case 'critical': return Icons.signal_cellular_connected_no_internet_4_bar;
+      case 'major':
+      case 'error': return Icons.error_outline;
+      case 'minor':
+      case 'warning': return Icons.warning_amber;
+      default: return Icons.check_circle_outline;
+    }
+  }
+
+  String _formatTimeAgo(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      final diff = DateTime.now().difference(date);
+      if (diff.inDays > 0) return '${diff.inDays}d ago';
+      if (diff.inHours > 0) return '${diff.inHours}h ago';
+      if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+      return 'Just now';
+    } catch (_) {
+      return 'N/A';
+    }
   }
 
   Widget _buildAlertTile(String title, String subtitle, String time, Color color, IconData icon) {
