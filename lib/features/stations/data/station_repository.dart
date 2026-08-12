@@ -14,7 +14,7 @@ class StationRepository {
   StationRepository(this._client);
 
   Future<List<BaseStation>> getStations() async {
-    final response = await _client.from('base_stations').select();
+    final response = await _client.from('base_stations').select().order('name');
     return (response as List).map((json) => BaseStation.fromJson(json)).toList();
   }
 

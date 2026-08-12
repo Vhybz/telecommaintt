@@ -93,7 +93,10 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         textInputAction: TextInputAction.next,
-        inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+          FilteringTextInputFormatter.deny(RegExp(r'\s')),
+        ],
         decoration: InputDecoration(
           labelText: label,
           helperText: helperText,

@@ -15,8 +15,16 @@ class MaintenanceRepository {
   Future<List<Map<String, dynamic>>> getMaintenanceTasks() async {
     final response = await _client
         .from('maintenance_tasks')
-        .select('*, base_stations(name), profiles(full_name)')
+        .select('*, base_stations(name, site_id), profiles(full_name)')
         .order('scheduled_date', ascending: true);
     return List<Map<String, dynamic>>.from(response);
+  }
+
+  Future<void> createMaintenanceTask(Map<String, dynamic> task) async {
+    await _client.from('maintenance_tasks').insert(task);
+  }
+
+  Future<void> updateTaskStatus(String id, String status) async {
+    await _client.from('maintenance_tasks').update({'status': status}).eq('id', id);
   }
 }
