@@ -73,7 +73,7 @@ class _AddTaskDialogState extends ConsumerState<AddTaskDialog> {
             children: [
               stationsAsync.when(
                 data: (stations) => DropdownButtonFormField<String>(
-                  value: _selectedStationId,
+                  initialValue: _selectedStationId,
                   decoration: const InputDecoration(labelText: 'Base Station', prefixIcon: Icon(Icons.cell_tower)),
                   items: stations.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
                   onChanged: (v) => setState(() => _selectedStationId = v),
@@ -85,7 +85,7 @@ class _AddTaskDialogState extends ConsumerState<AddTaskDialog> {
               const SizedBox(height: 16),
               techsAsync.when(
                 data: (techs) => DropdownButtonFormField<String>(
-                  value: _selectedTechId,
+                  initialValue: _selectedTechId,
                   decoration: const InputDecoration(labelText: 'Assign Technician', prefixIcon: Icon(Icons.person_outline)),
                   items: techs.map((t) => DropdownMenuItem(value: t['id'] as String, child: Text(t['full_name'] as String))).toList(),
                   onChanged: (v) => setState(() => _selectedTechId = v),

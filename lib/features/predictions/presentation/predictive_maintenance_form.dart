@@ -322,7 +322,7 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
                   const SizedBox(height: 10),
                   stationsAsync.when(
                     data: (stations) => DropdownButtonFormField<String>(
-                      value: _selectedStationId,
+                      initialValue: _selectedStationId,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         helperText: "Select the base station to analyze.",
@@ -388,7 +388,7 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
                   const SizedBox(height: 10),
 
                   DropdownButtonFormField<String>(
-                    value: _selectedRegion,
+                    initialValue: _selectedRegion,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       helperText: "The geographic region where the base station is located.",

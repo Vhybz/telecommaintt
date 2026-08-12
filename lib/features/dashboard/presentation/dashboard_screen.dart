@@ -477,9 +477,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       
                       return _buildTableRow(
                         (p.stationId != null && p.stationId!.length > 8) ? p.stationId!.substring(0, 8) : (p.stationId ?? 'Unknown'),
-                        p.faultType,
+                        p.faultType ?? 'Unknown',
                         '${(p.probability * 100).toStringAsFixed(0)}%',
-                        p.riskLevel,
+                        p.riskLevel ?? 'Low',
                         status,
                       );
                     }),
@@ -646,13 +646,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 final displayAlarms = alarms.take(4).toList();
                 return Column(
                   children: displayAlarms.map((alarm) {
-                    Color color = _getSeverityColor(alarm.severity);
-                    IconData icon = _getSeverityIcon(alarm.severity);
-                    String timeAgo = _formatTimeAgo(alarm.createdAt);
+                    Color color = _getSeverityColor(alarm.severity ?? 'Minor');
+                    IconData icon = _getSeverityIcon(alarm.severity ?? 'Minor');
+                    String timeAgo = _formatTimeAgo(alarm.createdAt ?? '');
                     
                     return _buildAlertTile(
-                      alarm.description,
-                      '${alarm.stationId} • Status: ${alarm.status}',
+                      alarm.description ?? 'No description',
+                      '${alarm.stationId ?? "Unknown"} • Status: ${alarm.status ?? "Open"}',
                       timeAgo,
                       color,
                       icon,
@@ -669,7 +669,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Color _getSeverityColor(String severity) {
+  Color _getSeverityColor(String? severity) {
+    if (severity == null) return AppColors.success;
     switch (severity.toLowerCase()) {
       case 'critical': return AppColors.critical;
       case 'major':
@@ -680,7 +681,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
   }
 
-  IconData _getSeverityIcon(String severity) {
+  IconData _getSeverityIcon(String? severity) {
+    if (severity == null) return Icons.check_circle_outline;
     switch (severity.toLowerCase()) {
       case 'critical': return Icons.signal_cellular_connected_no_internet_4_bar;
       case 'major':

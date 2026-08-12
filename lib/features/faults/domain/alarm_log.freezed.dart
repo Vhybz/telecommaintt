@@ -23,14 +23,14 @@ AlarmLog _$AlarmLogFromJson(Map<String, dynamic> json) {
 mixin _$AlarmLog {
   String get id => throw _privateConstructorUsedError;
   @JsonKey(name: 'station_id')
-  String get stationId => throw _privateConstructorUsedError;
+  String? get stationId => throw _privateConstructorUsedError;
   @JsonKey(name: 'equipment_id')
   String? get equipmentId => throw _privateConstructorUsedError;
-  String get severity => throw _privateConstructorUsedError;
-  String get description => throw _privateConstructorUsedError;
-  String get status => throw _privateConstructorUsedError;
+  String? get severity => throw _privateConstructorUsedError;
+  String? get description => throw _privateConstructorUsedError;
+  String? get status => throw _privateConstructorUsedError;
   @JsonKey(name: 'created_at')
-  String get createdAt => throw _privateConstructorUsedError;
+  String? get createdAt => throw _privateConstructorUsedError;
   @JsonKey(name: 'resolved_at')
   String? get resolvedAt => throw _privateConstructorUsedError;
 
@@ -51,12 +51,12 @@ abstract class $AlarmLogCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    @JsonKey(name: 'station_id') String stationId,
+    @JsonKey(name: 'station_id') String? stationId,
     @JsonKey(name: 'equipment_id') String? equipmentId,
-    String severity,
-    String description,
-    String status,
-    @JsonKey(name: 'created_at') String createdAt,
+    String? severity,
+    String? description,
+    String? status,
+    @JsonKey(name: 'created_at') String? createdAt,
     @JsonKey(name: 'resolved_at') String? resolvedAt,
   });
 }
@@ -77,12 +77,12 @@ class _$AlarmLogCopyWithImpl<$Res, $Val extends AlarmLog>
   @override
   $Res call({
     Object? id = null,
-    Object? stationId = null,
+    Object? stationId = freezed,
     Object? equipmentId = freezed,
-    Object? severity = null,
-    Object? description = null,
-    Object? status = null,
-    Object? createdAt = null,
+    Object? severity = freezed,
+    Object? description = freezed,
+    Object? status = freezed,
+    Object? createdAt = freezed,
     Object? resolvedAt = freezed,
   }) {
     return _then(
@@ -91,30 +91,30 @@ class _$AlarmLogCopyWithImpl<$Res, $Val extends AlarmLog>
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
                       as String,
-            stationId: null == stationId
+            stationId: freezed == stationId
                 ? _value.stationId
                 : stationId // ignore: cast_nullable_to_non_nullable
-                      as String,
+                      as String?,
             equipmentId: freezed == equipmentId
                 ? _value.equipmentId
                 : equipmentId // ignore: cast_nullable_to_non_nullable
                       as String?,
-            severity: null == severity
+            severity: freezed == severity
                 ? _value.severity
                 : severity // ignore: cast_nullable_to_non_nullable
-                      as String,
-            description: null == description
+                      as String?,
+            description: freezed == description
                 ? _value.description
                 : description // ignore: cast_nullable_to_non_nullable
-                      as String,
-            status: null == status
+                      as String?,
+            status: freezed == status
                 ? _value.status
                 : status // ignore: cast_nullable_to_non_nullable
-                      as String,
-            createdAt: null == createdAt
+                      as String?,
+            createdAt: freezed == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
-                      as String,
+                      as String?,
             resolvedAt: freezed == resolvedAt
                 ? _value.resolvedAt
                 : resolvedAt // ignore: cast_nullable_to_non_nullable
@@ -136,12 +136,12 @@ abstract class _$$AlarmLogImplCopyWith<$Res>
   @useResult
   $Res call({
     String id,
-    @JsonKey(name: 'station_id') String stationId,
+    @JsonKey(name: 'station_id') String? stationId,
     @JsonKey(name: 'equipment_id') String? equipmentId,
-    String severity,
-    String description,
-    String status,
-    @JsonKey(name: 'created_at') String createdAt,
+    String? severity,
+    String? description,
+    String? status,
+    @JsonKey(name: 'created_at') String? createdAt,
     @JsonKey(name: 'resolved_at') String? resolvedAt,
   });
 }
@@ -161,12 +161,12 @@ class __$$AlarmLogImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? stationId = null,
+    Object? stationId = freezed,
     Object? equipmentId = freezed,
-    Object? severity = null,
-    Object? description = null,
-    Object? status = null,
-    Object? createdAt = null,
+    Object? severity = freezed,
+    Object? description = freezed,
+    Object? status = freezed,
+    Object? createdAt = freezed,
     Object? resolvedAt = freezed,
   }) {
     return _then(
@@ -175,30 +175,30 @@ class __$$AlarmLogImplCopyWithImpl<$Res>
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
                   as String,
-        stationId: null == stationId
+        stationId: freezed == stationId
             ? _value.stationId
             : stationId // ignore: cast_nullable_to_non_nullable
-                  as String,
+                  as String?,
         equipmentId: freezed == equipmentId
             ? _value.equipmentId
             : equipmentId // ignore: cast_nullable_to_non_nullable
                   as String?,
-        severity: null == severity
+        severity: freezed == severity
             ? _value.severity
             : severity // ignore: cast_nullable_to_non_nullable
-                  as String,
-        description: null == description
+                  as String?,
+        description: freezed == description
             ? _value.description
             : description // ignore: cast_nullable_to_non_nullable
-                  as String,
-        status: null == status
+                  as String?,
+        status: freezed == status
             ? _value.status
             : status // ignore: cast_nullable_to_non_nullable
-                  as String,
-        createdAt: null == createdAt
+                  as String?,
+        createdAt: freezed == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
-                  as String,
+                  as String?,
         resolvedAt: freezed == resolvedAt
             ? _value.resolvedAt
             : resolvedAt // ignore: cast_nullable_to_non_nullable
@@ -213,12 +213,12 @@ class __$$AlarmLogImplCopyWithImpl<$Res>
 class _$AlarmLogImpl implements _AlarmLog {
   const _$AlarmLogImpl({
     required this.id,
-    @JsonKey(name: 'station_id') required this.stationId,
+    @JsonKey(name: 'station_id') this.stationId,
     @JsonKey(name: 'equipment_id') this.equipmentId,
-    required this.severity,
-    required this.description,
-    required this.status,
-    @JsonKey(name: 'created_at') required this.createdAt,
+    this.severity,
+    this.description,
+    this.status,
+    @JsonKey(name: 'created_at') this.createdAt,
     @JsonKey(name: 'resolved_at') this.resolvedAt,
   });
 
@@ -229,19 +229,19 @@ class _$AlarmLogImpl implements _AlarmLog {
   final String id;
   @override
   @JsonKey(name: 'station_id')
-  final String stationId;
+  final String? stationId;
   @override
   @JsonKey(name: 'equipment_id')
   final String? equipmentId;
   @override
-  final String severity;
+  final String? severity;
   @override
-  final String description;
+  final String? description;
   @override
-  final String status;
+  final String? status;
   @override
   @JsonKey(name: 'created_at')
-  final String createdAt;
+  final String? createdAt;
   @override
   @JsonKey(name: 'resolved_at')
   final String? resolvedAt;
@@ -303,12 +303,12 @@ class _$AlarmLogImpl implements _AlarmLog {
 abstract class _AlarmLog implements AlarmLog {
   const factory _AlarmLog({
     required final String id,
-    @JsonKey(name: 'station_id') required final String stationId,
+    @JsonKey(name: 'station_id') final String? stationId,
     @JsonKey(name: 'equipment_id') final String? equipmentId,
-    required final String severity,
-    required final String description,
-    required final String status,
-    @JsonKey(name: 'created_at') required final String createdAt,
+    final String? severity,
+    final String? description,
+    final String? status,
+    @JsonKey(name: 'created_at') final String? createdAt,
     @JsonKey(name: 'resolved_at') final String? resolvedAt,
   }) = _$AlarmLogImpl;
 
@@ -319,19 +319,19 @@ abstract class _AlarmLog implements AlarmLog {
   String get id;
   @override
   @JsonKey(name: 'station_id')
-  String get stationId;
+  String? get stationId;
   @override
   @JsonKey(name: 'equipment_id')
   String? get equipmentId;
   @override
-  String get severity;
+  String? get severity;
   @override
-  String get description;
+  String? get description;
   @override
-  String get status;
+  String? get status;
   @override
   @JsonKey(name: 'created_at')
-  String get createdAt;
+  String? get createdAt;
   @override
   @JsonKey(name: 'resolved_at')
   String? get resolvedAt;

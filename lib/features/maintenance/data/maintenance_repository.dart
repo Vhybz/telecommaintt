@@ -15,7 +15,7 @@ class MaintenanceRepository {
   Future<List<Map<String, dynamic>>> getMaintenanceTasks() async {
     final response = await _client
         .from('maintenance_tasks')
-        .select('*, base_stations(name, site_id), profiles(full_name)')
+        .select('*, base_stations(name, site_id), technician:profiles!maintenance_tasks_assigned_to_fkey(full_name)')
         .order('scheduled_date', ascending: true);
     return List<Map<String, dynamic>>.from(response);
   }

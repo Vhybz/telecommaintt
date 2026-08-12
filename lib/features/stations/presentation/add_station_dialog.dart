@@ -117,7 +117,7 @@ class _AddStationDialogState extends ConsumerState<AddStationDialog> {
                 error: (error, stack) => const Text('Error loading regions'),
               ),
               DropdownButtonFormField<String>(
-                value: _selectedStatus,
+                initialValue: _selectedStatus,
                 decoration: const InputDecoration(labelText: 'Status'),
                 items: ['Online', 'Offline', 'Maintenance', 'Degraded'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                 onChanged: (v) => setState(() => _selectedStatus = v!),

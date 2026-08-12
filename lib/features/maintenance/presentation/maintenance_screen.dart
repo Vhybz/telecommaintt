@@ -170,7 +170,7 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen> with Sing
                   children: [
                     const CircleAvatar(radius: 14, child: Icon(Icons.person, size: 16)),
                     const SizedBox(width: 8),
-                    Text('Tech: ${task['profiles']?['full_name'] ?? 'Unassigned'}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                    Text('Tech: ${task['assigned_to']?['full_name'] ?? 'Unassigned'}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                   ],
                 ),
                 Row(

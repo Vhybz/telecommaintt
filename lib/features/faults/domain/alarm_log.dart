@@ -7,12 +7,12 @@ part 'alarm_log.g.dart';
 abstract class AlarmLog with _$AlarmLog {
   const factory AlarmLog({
     required String id,
-    @JsonKey(name: 'station_id') required String stationId,
+    @JsonKey(name: 'station_id') String? stationId,
     @JsonKey(name: 'equipment_id') String? equipmentId,
-    required String severity,
-    required String description,
-    required String status,
-    @JsonKey(name: 'created_at') required String createdAt,
+    String? severity,
+    String? description,
+    String? status,
+    @JsonKey(name: 'created_at') String? createdAt,
     @JsonKey(name: 'resolved_at') String? resolvedAt,
   }) = _AlarmLog;
 

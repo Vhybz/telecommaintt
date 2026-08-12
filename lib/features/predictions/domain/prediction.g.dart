@@ -11,14 +11,14 @@ _$PredictionImpl _$$PredictionImplFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       stationId: json['station_id'] as String?,
       equipmentId: json['equipment_id'] as String?,
-      faultType: json['fault_type'] as String,
-      probability: (json['probability'] as num).toDouble(),
-      riskLevel: json['risk_level'] as String,
+      faultType: json['fault_type'] as String?,
+      probability: (json['probability'] as num?)?.toDouble() ?? 0.0,
+      riskLevel: json['risk_level'] as String?,
       recommendedAction: json['recommended_action'] as String?,
       dcrCssrRatio: (json['dcr_cssr_ratio'] as num?)?.toDouble(),
       tpPrbEfficiency: (json['tp_prb_efficiency'] as num?)?.toDouble(),
       availXCssr: (json['avail_x_cssr'] as num?)?.toDouble(),
-      createdAt: json['created_at'] as String,
+      createdAt: json['created_at'] as String?,
     );
 
 Map<String, dynamic> _$$PredictionImplToJson(_$PredictionImpl instance) =>

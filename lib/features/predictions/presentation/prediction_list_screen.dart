@@ -5,6 +5,8 @@ import '../domain/prediction.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../widgets/skeleton_loader.dart';
 
+import '../../maintenance/presentation/add_task_dialog.dart';
+
 class PredictionListScreen extends ConsumerWidget {
   const PredictionListScreen({super.key});
 
@@ -34,7 +36,7 @@ class PredictionListScreen extends ConsumerWidget {
   }
 
   Widget _buildPredictionCard(BuildContext context, Prediction prediction) {
-    Color riskColor = _getRiskColor(prediction.riskLevel);
+    Color riskColor = _getRiskColor(prediction.riskLevel ?? 'Low');
     final String displayStationId = prediction.stationId ?? 'Unknown';
 
     return Card(
@@ -52,7 +54,7 @@ class PredictionListScreen extends ConsumerWidget {
                     Icon(Icons.online_prediction, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(width: 12),
                     Text(
-                      prediction.faultType,
+                      prediction.faultType ?? 'Unknown Fault',
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -64,7 +66,7 @@ class PredictionListScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    '${prediction.riskLevel} Risk',
+                    '${prediction.riskLevel ?? "Low"} Risk',
                     style: TextStyle(color: riskColor, fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                 ),
@@ -95,7 +97,10 @@ class PredictionListScreen extends ConsumerWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (context) => AddTaskDialog(initialStationId: prediction.stationId),
+                ),
                 child: const Text('Create Maintenance Task'),
               ),
             ),

@@ -9,12 +9,12 @@ part of 'alarm_log.dart';
 _$AlarmLogImpl _$$AlarmLogImplFromJson(Map<String, dynamic> json) =>
     _$AlarmLogImpl(
       id: json['id'] as String,
-      stationId: json['station_id'] as String,
+      stationId: json['station_id'] as String?,
       equipmentId: json['equipment_id'] as String?,
-      severity: json['severity'] as String,
-      description: json['description'] as String,
-      status: json['status'] as String,
-      createdAt: json['created_at'] as String,
+      severity: json['severity'] as String?,
+      description: json['description'] as String?,
+      status: json['status'] as String?,
+      createdAt: json['created_at'] as String?,
       resolvedAt: json['resolved_at'] as String?,
     );
 

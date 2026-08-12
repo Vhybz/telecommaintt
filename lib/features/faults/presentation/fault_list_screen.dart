@@ -37,8 +37,9 @@ class FaultListScreen extends ConsumerWidget {
   }
 
   Widget _buildAlarmTile(BuildContext context, AlarmLog alarm) {
-    Color severityColor = _getSeverityColor(alarm.severity);
-    final date = DateTime.parse(alarm.createdAt);
+    Color severityColor = _getSeverityColor(alarm.severity ?? 'Minor');
+    final String dateStr = alarm.createdAt ?? DateTime.now().toIso8601String();
+    final date = DateTime.parse(dateStr);
 
     return Card(
       child: Column(
@@ -52,23 +53,23 @@ class FaultListScreen extends ConsumerWidget {
               ),
               child: Icon(Icons.warning_amber, color: severityColor),
             ),
-            title: Text(alarm.description, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(alarm.description ?? 'No description', style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Station ID: ${alarm.stationId}'),
+                Text('Station ID: ${alarm.stationId ?? "Unknown"}'),
                 Text(DateFormat('MMM dd, yyyy HH:mm').format(date), style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ],
             ),
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: _getStatusColor(alarm.status).withValues(alpha: 0.1),
+                color: _getStatusColor(alarm.status ?? 'Open').withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                alarm.status,
-                style: TextStyle(color: _getStatusColor(alarm.status), fontWeight: FontWeight.bold, fontSize: 12),
+                alarm.status ?? 'Open',
+                style: TextStyle(color: _getStatusColor(alarm.status ?? 'Open'), fontWeight: FontWeight.bold, fontSize: 12),
               ),
             ),
           ),
@@ -94,7 +95,7 @@ class FaultListScreen extends ConsumerWidget {
     );
   }
 
-  Color _getSeverityColor(String severity) {
+  Color _getSeverityColor(String? severity) {
     switch (severity) {
       case 'Critical': return AppColors.critical;
       case 'Major': return AppColors.error;
@@ -103,7 +104,7 @@ class FaultListScreen extends ConsumerWidget {
     }
   }
 
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(String? status) {
     switch (status) {
       case 'Open': return AppColors.error;
       case 'Acknowledged': return AppColors.warning;

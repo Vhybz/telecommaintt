@@ -27,10 +27,10 @@ mixin _$Prediction {
   @JsonKey(name: 'equipment_id')
   String? get equipmentId => throw _privateConstructorUsedError;
   @JsonKey(name: 'fault_type')
-  String get faultType => throw _privateConstructorUsedError;
+  String? get faultType => throw _privateConstructorUsedError;
   double get probability => throw _privateConstructorUsedError;
   @JsonKey(name: 'risk_level')
-  String get riskLevel => throw _privateConstructorUsedError;
+  String? get riskLevel => throw _privateConstructorUsedError;
   @JsonKey(name: 'recommended_action')
   String? get recommendedAction => throw _privateConstructorUsedError;
   @JsonKey(name: 'dcr_cssr_ratio')
@@ -40,7 +40,7 @@ mixin _$Prediction {
   @JsonKey(name: 'avail_x_cssr')
   double? get availXCssr => throw _privateConstructorUsedError;
   @JsonKey(name: 'created_at')
-  String get createdAt => throw _privateConstructorUsedError;
+  String? get createdAt => throw _privateConstructorUsedError;
 
   /// Serializes this Prediction to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -63,14 +63,14 @@ abstract class $PredictionCopyWith<$Res> {
     String id,
     @JsonKey(name: 'station_id') String? stationId,
     @JsonKey(name: 'equipment_id') String? equipmentId,
-    @JsonKey(name: 'fault_type') String faultType,
+    @JsonKey(name: 'fault_type') String? faultType,
     double probability,
-    @JsonKey(name: 'risk_level') String riskLevel,
+    @JsonKey(name: 'risk_level') String? riskLevel,
     @JsonKey(name: 'recommended_action') String? recommendedAction,
     @JsonKey(name: 'dcr_cssr_ratio') double? dcrCssrRatio,
     @JsonKey(name: 'tp_prb_efficiency') double? tpPrbEfficiency,
     @JsonKey(name: 'avail_x_cssr') double? availXCssr,
-    @JsonKey(name: 'created_at') String createdAt,
+    @JsonKey(name: 'created_at') String? createdAt,
   });
 }
 
@@ -92,14 +92,14 @@ class _$PredictionCopyWithImpl<$Res, $Val extends Prediction>
     Object? id = null,
     Object? stationId = freezed,
     Object? equipmentId = freezed,
-    Object? faultType = null,
+    Object? faultType = freezed,
     Object? probability = null,
-    Object? riskLevel = null,
+    Object? riskLevel = freezed,
     Object? recommendedAction = freezed,
     Object? dcrCssrRatio = freezed,
     Object? tpPrbEfficiency = freezed,
     Object? availXCssr = freezed,
-    Object? createdAt = null,
+    Object? createdAt = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -115,18 +115,18 @@ class _$PredictionCopyWithImpl<$Res, $Val extends Prediction>
                 ? _value.equipmentId
                 : equipmentId // ignore: cast_nullable_to_non_nullable
                       as String?,
-            faultType: null == faultType
+            faultType: freezed == faultType
                 ? _value.faultType
                 : faultType // ignore: cast_nullable_to_non_nullable
-                      as String,
+                      as String?,
             probability: null == probability
                 ? _value.probability
                 : probability // ignore: cast_nullable_to_non_nullable
                       as double,
-            riskLevel: null == riskLevel
+            riskLevel: freezed == riskLevel
                 ? _value.riskLevel
                 : riskLevel // ignore: cast_nullable_to_non_nullable
-                      as String,
+                      as String?,
             recommendedAction: freezed == recommendedAction
                 ? _value.recommendedAction
                 : recommendedAction // ignore: cast_nullable_to_non_nullable
@@ -143,10 +143,10 @@ class _$PredictionCopyWithImpl<$Res, $Val extends Prediction>
                 ? _value.availXCssr
                 : availXCssr // ignore: cast_nullable_to_non_nullable
                       as double?,
-            createdAt: null == createdAt
+            createdAt: freezed == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
-                      as String,
+                      as String?,
           )
           as $Val,
     );
@@ -166,14 +166,14 @@ abstract class _$$PredictionImplCopyWith<$Res>
     String id,
     @JsonKey(name: 'station_id') String? stationId,
     @JsonKey(name: 'equipment_id') String? equipmentId,
-    @JsonKey(name: 'fault_type') String faultType,
+    @JsonKey(name: 'fault_type') String? faultType,
     double probability,
-    @JsonKey(name: 'risk_level') String riskLevel,
+    @JsonKey(name: 'risk_level') String? riskLevel,
     @JsonKey(name: 'recommended_action') String? recommendedAction,
     @JsonKey(name: 'dcr_cssr_ratio') double? dcrCssrRatio,
     @JsonKey(name: 'tp_prb_efficiency') double? tpPrbEfficiency,
     @JsonKey(name: 'avail_x_cssr') double? availXCssr,
-    @JsonKey(name: 'created_at') String createdAt,
+    @JsonKey(name: 'created_at') String? createdAt,
   });
 }
 
@@ -194,14 +194,14 @@ class __$$PredictionImplCopyWithImpl<$Res>
     Object? id = null,
     Object? stationId = freezed,
     Object? equipmentId = freezed,
-    Object? faultType = null,
+    Object? faultType = freezed,
     Object? probability = null,
-    Object? riskLevel = null,
+    Object? riskLevel = freezed,
     Object? recommendedAction = freezed,
     Object? dcrCssrRatio = freezed,
     Object? tpPrbEfficiency = freezed,
     Object? availXCssr = freezed,
-    Object? createdAt = null,
+    Object? createdAt = freezed,
   }) {
     return _then(
       _$PredictionImpl(
@@ -217,18 +217,18 @@ class __$$PredictionImplCopyWithImpl<$Res>
             ? _value.equipmentId
             : equipmentId // ignore: cast_nullable_to_non_nullable
                   as String?,
-        faultType: null == faultType
+        faultType: freezed == faultType
             ? _value.faultType
             : faultType // ignore: cast_nullable_to_non_nullable
-                  as String,
+                  as String?,
         probability: null == probability
             ? _value.probability
             : probability // ignore: cast_nullable_to_non_nullable
                   as double,
-        riskLevel: null == riskLevel
+        riskLevel: freezed == riskLevel
             ? _value.riskLevel
             : riskLevel // ignore: cast_nullable_to_non_nullable
-                  as String,
+                  as String?,
         recommendedAction: freezed == recommendedAction
             ? _value.recommendedAction
             : recommendedAction // ignore: cast_nullable_to_non_nullable
@@ -245,10 +245,10 @@ class __$$PredictionImplCopyWithImpl<$Res>
             ? _value.availXCssr
             : availXCssr // ignore: cast_nullable_to_non_nullable
                   as double?,
-        createdAt: null == createdAt
+        createdAt: freezed == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
-                  as String,
+                  as String?,
       ),
     );
   }
@@ -261,14 +261,14 @@ class _$PredictionImpl implements _Prediction {
     required this.id,
     @JsonKey(name: 'station_id') this.stationId,
     @JsonKey(name: 'equipment_id') this.equipmentId,
-    @JsonKey(name: 'fault_type') required this.faultType,
-    required this.probability,
-    @JsonKey(name: 'risk_level') required this.riskLevel,
+    @JsonKey(name: 'fault_type') this.faultType,
+    this.probability = 0.0,
+    @JsonKey(name: 'risk_level') this.riskLevel,
     @JsonKey(name: 'recommended_action') this.recommendedAction,
     @JsonKey(name: 'dcr_cssr_ratio') this.dcrCssrRatio,
     @JsonKey(name: 'tp_prb_efficiency') this.tpPrbEfficiency,
     @JsonKey(name: 'avail_x_cssr') this.availXCssr,
-    @JsonKey(name: 'created_at') required this.createdAt,
+    @JsonKey(name: 'created_at') this.createdAt,
   });
 
   factory _$PredictionImpl.fromJson(Map<String, dynamic> json) =>
@@ -284,12 +284,13 @@ class _$PredictionImpl implements _Prediction {
   final String? equipmentId;
   @override
   @JsonKey(name: 'fault_type')
-  final String faultType;
+  final String? faultType;
   @override
+  @JsonKey()
   final double probability;
   @override
   @JsonKey(name: 'risk_level')
-  final String riskLevel;
+  final String? riskLevel;
   @override
   @JsonKey(name: 'recommended_action')
   final String? recommendedAction;
@@ -304,7 +305,7 @@ class _$PredictionImpl implements _Prediction {
   final double? availXCssr;
   @override
   @JsonKey(name: 'created_at')
-  final String createdAt;
+  final String? createdAt;
 
   @override
   String toString() {
@@ -375,14 +376,14 @@ abstract class _Prediction implements Prediction {
     required final String id,
     @JsonKey(name: 'station_id') final String? stationId,
     @JsonKey(name: 'equipment_id') final String? equipmentId,
-    @JsonKey(name: 'fault_type') required final String faultType,
-    required final double probability,
-    @JsonKey(name: 'risk_level') required final String riskLevel,
+    @JsonKey(name: 'fault_type') final String? faultType,
+    final double probability,
+    @JsonKey(name: 'risk_level') final String? riskLevel,
     @JsonKey(name: 'recommended_action') final String? recommendedAction,
     @JsonKey(name: 'dcr_cssr_ratio') final double? dcrCssrRatio,
     @JsonKey(name: 'tp_prb_efficiency') final double? tpPrbEfficiency,
     @JsonKey(name: 'avail_x_cssr') final double? availXCssr,
-    @JsonKey(name: 'created_at') required final String createdAt,
+    @JsonKey(name: 'created_at') final String? createdAt,
   }) = _$PredictionImpl;
 
   factory _Prediction.fromJson(Map<String, dynamic> json) =
@@ -398,12 +399,12 @@ abstract class _Prediction implements Prediction {
   String? get equipmentId;
   @override
   @JsonKey(name: 'fault_type')
-  String get faultType;
+  String? get faultType;
   @override
   double get probability;
   @override
   @JsonKey(name: 'risk_level')
-  String get riskLevel;
+  String? get riskLevel;
   @override
   @JsonKey(name: 'recommended_action')
   String? get recommendedAction;
@@ -418,7 +419,7 @@ abstract class _Prediction implements Prediction {
   double? get availXCssr;
   @override
   @JsonKey(name: 'created_at')
-  String get createdAt;
+  String? get createdAt;
 
   /// Create a copy of Prediction
   /// with the given fields replaced by the non-null parameter values.
