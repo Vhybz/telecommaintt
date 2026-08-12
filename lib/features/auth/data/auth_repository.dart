@@ -65,23 +65,33 @@ class AuthRepository {
 
   Future<Map<String, dynamic>?> getUserProfile(String userId) async {
     try {
-      final response = await _client
-          .from('profiles')
-          .select('*, roles(name)')
-          .eq('id', userId)
-          .single();
-      return response;
-    } catch (e) {
-      // Fallback: If the roles join fails, just get the profile data
-      final fallbackResponse = await _client
+      // 1. Fetch the profile data first (no join)
+      final profile = await _client
           .from('profiles')
           .select('*')
           .eq('id', userId)
           .single();
-      return {
-        ...fallbackResponse,
-        'roles': {'name': 'User'} // Default display name
-      };
+      
+      // 2. Try to fetch the role name separately if role_id exists
+      if (profile['role_id'] != null) {
+        try {
+          final roleData = await _client
+              .from('roles')
+              .select('name')
+              .eq('id', profile['role_id'])
+              .single();
+          profile['roles'] = roleData;
+        } catch (_) {
+          profile['roles'] = {'name': 'User'};
+        }
+      } else {
+        profile['roles'] = {'name': 'User'};
+      }
+      
+      return profile;
+    } catch (e) {
+      print('Error in getUserProfile: $e');
+      return null;
     }
   }
 }
