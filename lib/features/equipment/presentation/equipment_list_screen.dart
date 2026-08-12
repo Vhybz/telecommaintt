@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
 import '../../../core/theme/app_colors.dart';
+import '../data/equipment_repository.dart';
 
-class EquipmentListScreen extends StatelessWidget {
+class EquipmentListScreen extends ConsumerWidget {
   const EquipmentListScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final equipmentAsync = ref.watch(equipmentProvider);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -14,9 +18,18 @@ class EquipmentListScreen extends StatelessWidget {
         children: [
           _buildHeader(context),
           const SizedBox(height: 24),
-          _buildSummaryCards(context),
-          const SizedBox(height: 24),
-          _buildInventoryGrid(context),
+          equipmentAsync.when(
+            data: (items) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSummaryCards(context, items),
+                const SizedBox(height: 24),
+                _buildInventoryGrid(context, items),
+              ],
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+          ),
         ],
       ),
     );
@@ -66,14 +79,17 @@ class EquipmentListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCards(BuildContext context) {
+  Widget _buildSummaryCards(BuildContext context, List<Map<String, dynamic>> items) {
+    final active = items.where((i) => i['status'] == 'Active').length;
+    final maintenance = items.where((i) => i['status'] == 'Maintenance').length;
+
     return Row(
       children: [
-        Expanded(child: _buildStatCard(context, 'Total Items', '1,240', Icons.inventory_2, Theme.of(context).colorScheme.primary)),
+        Expanded(child: _buildStatCard(context, 'Total Items', items.length.toString(), Icons.inventory_2, Theme.of(context).colorScheme.primary)),
         const SizedBox(width: 16),
-        Expanded(child: _buildStatCard(context, 'Active', '982', Icons.check_circle, AppColors.success)),
+        Expanded(child: _buildStatCard(context, 'Active', active.toString(), Icons.check_circle, AppColors.success)),
         const SizedBox(width: 16),
-        Expanded(child: _buildStatCard(context, 'Maintenance', '45', Icons.build, AppColors.warning)),
+        Expanded(child: _buildStatCard(context, 'Maintenance', maintenance.toString(), Icons.build, AppColors.warning)),
       ],
     );
   }
@@ -95,10 +111,18 @@ class EquipmentListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInventoryGrid(BuildContext context) {
+  Widget _buildInventoryGrid(BuildContext context, List<Map<String, dynamic>> items) {
+    if (items.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40.0),
+          child: Text('No equipment found in inventory.'),
+        ),
+      );
+    }
+
     return LayoutBuilder(builder: (context, constraints) {
       int crossAxisCount = constraints.maxWidth > 1200 ? 4 : (constraints.maxWidth > 800 ? 3 : 2);
-      // Increased childAspectRatio to give more height and prevent overflow
       double aspectRatio = constraints.maxWidth < 600 ? 0.75 : 0.85;
       return GridView.builder(
         shrinkWrap: true,
@@ -109,16 +133,17 @@ class EquipmentListScreen extends StatelessWidget {
           mainAxisSpacing: 16,
           childAspectRatio: aspectRatio,
         ),
-        itemCount: 8, // Sample count
-        itemBuilder: (context, index) => _buildEquipmentCard(context, index),
+        itemCount: items.length,
+        itemBuilder: (context, index) => _buildEquipmentCard(context, items[index]),
       );
     });
   }
 
-  Widget _buildEquipmentCard(BuildContext context, int index) {
-    final types = ['Cisco Router', 'Ericsson Antenna', 'Huawei Switch', 'Nokia Gateway'];
-    final status = index % 3 == 0 ? 'Maintenance' : 'Active';
+  Widget _buildEquipmentCard(BuildContext context, Map<String, dynamic> item) {
+    final name = item['model'] ?? item['equipment_types']?['name'] ?? 'Unknown Item';
+    final status = item['status'] ?? 'Active';
     final statusColor = status == 'Active' ? AppColors.success : AppColors.warning;
+    final site = item['base_stations']?['name'] ?? 'Unknown Site';
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -144,14 +169,14 @@ class EquipmentListScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(types[index % 4], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Text('SN: 8492-AX-923', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text('SN: ${item['serial_number'] ?? 'N/A'}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Icon(Icons.location_on_outlined, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(width: 4),
-                    const Text('Site: NYC-01', style: TextStyle(fontSize: 12)),
+                    Text('Site: $site', style: const TextStyle(fontSize: 12)),
                   ],
                 ),
                 const SizedBox(height: 12),

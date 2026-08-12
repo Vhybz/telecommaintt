@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
+import '../data/maintenance_repository.dart';
 
-class MaintenanceScreen extends StatefulWidget {
+class MaintenanceScreen extends ConsumerStatefulWidget {
   const MaintenanceScreen({super.key});
 
   @override
-  State<MaintenanceScreen> createState() => _MaintenanceScreenState();
+  ConsumerState<MaintenanceScreen> createState() => _MaintenanceScreenState();
 }
 
-class _MaintenanceScreenState extends State<MaintenanceScreen> with SingleTickerProviderStateMixin {
+class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -20,6 +23,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
+    final tasksAsync = ref.watch(maintenanceTasksProvider);
+
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -40,44 +45,60 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with SingleTicker
             ],
           ),
           const SizedBox(height: 24),
-          TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            dividerColor: Colors.transparent,
-            tabs: const [
-              Tab(text: 'Active (12)'),
-              Tab(text: 'Scheduled (8)'),
-              Tab(text: 'Completed (45)'),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildTaskList('Active'),
-                _buildTaskList('Scheduled'),
-                _buildTaskList('Completed'),
-              ],
+          tasksAsync.when(
+            data: (tasks) => Expanded(
+              child: Column(
+                children: [
+                  TabBar(
+                    controller: _tabController,
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
+                    dividerColor: Colors.transparent,
+                    tabs: [
+                      Tab(text: 'Active (${tasks.where((t) => t['status'] == 'In Progress' || t['status'] == 'Pending').length})'),
+                      Tab(text: 'Scheduled (${tasks.where((t) => t['scheduled_date'] != null && t['status'] == 'Pending').length})'),
+                      Tab(text: 'Completed (${tasks.where((t) => t['status'] == 'Completed').length})'),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildTaskList(tasks.where((t) => t['status'] == 'In Progress' || t['status'] == 'Pending').toList()),
+                        _buildTaskList(tasks.where((t) => t['scheduled_date'] != null && t['status'] == 'Pending').toList()),
+                        _buildTaskList(tasks.where((t) => t['status'] == 'Completed').toList()),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTaskList(String status) {
+  Widget _buildTaskList(List<Map<String, dynamic>> tasks) {
+    if (tasks.isEmpty) {
+      return const Center(child: Text('No tasks in this category.'));
+    }
     return ListView.builder(
-      itemCount: 5,
-      itemBuilder: (context, index) => _buildTaskCard(index),
+      itemCount: tasks.length,
+      itemBuilder: (context, index) => _buildTaskCard(tasks[index]),
     );
   }
 
-  Widget _buildTaskCard(int index) {
-    final priorities = ['Critical', 'Major', 'Minor'];
-    final priority = priorities[index % 3];
-    final priorityColor = priority == 'Critical' ? AppColors.critical : (priority == 'Major' ? AppColors.error : AppColors.warning);
+  Widget _buildTaskCard(Map<String, dynamic> task) {
+    final status = task['status'] ?? 'Pending';
+    final priority = (task['fault_description']?.toLowerCase().contains('critical') ?? false) ? 'Critical' : 'Medium';
+    final priorityColor = priority == 'Critical' ? AppColors.critical : AppColors.warning;
+    final dateStr = task['scheduled_date'] != null 
+        ? DateFormat('MMM dd, yyyy').format(DateTime.parse(task['scheduled_date']))
+        : 'Not Set';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -107,7 +128,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with SingleTicker
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Task #MNT-${829 + index}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text('Task #${task['id'].toString().substring(0, 8)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(color: priorityColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
@@ -115,17 +136,17 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with SingleTicker
                           ),
                         ],
                       ),
-                      const Text('Signal interference at North Tower B2', style: TextStyle(fontSize: 14)),
+                      Text(task['fault_description'] ?? 'No description provided', style: const TextStyle(fontSize: 14)),
                       const SizedBox(height: 12),
                       Row(
                         children: [
                           const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
                           const SizedBox(width: 4),
-                          const Text('Site ID: NY-921', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                          Text('Site: ${task['base_stations']?['name'] ?? 'N/A'}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                           const SizedBox(width: 16),
                           const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textSecondary),
                           const SizedBox(width: 4),
-                          const Text('Due: Aug 12, 2026', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                          Text('Due: $dateStr', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                         ],
                       ),
                     ],
@@ -145,7 +166,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with SingleTicker
                   children: [
                     const CircleAvatar(radius: 14, child: Icon(Icons.person, size: 16)),
                     const SizedBox(width: 8),
-                    const Text('Tech: Alex Rivera', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                    Text('Tech: ${task['profiles']?['full_name'] ?? 'Unassigned'}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                   ],
                 ),
                 Row(
@@ -153,7 +174,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with SingleTicker
                   children: [
                     TextButton(onPressed: () {}, child: const Text('View Details')),
                     const SizedBox(width: 8),
-                    OutlinedButton(onPressed: () {}, child: const Text('Complete')),
+                    if (status != 'Completed')
+                      OutlinedButton(onPressed: () {}, child: const Text('Complete')),
                   ],
                 ),
               ],

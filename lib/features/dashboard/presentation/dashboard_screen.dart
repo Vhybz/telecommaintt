@@ -56,7 +56,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       case 10:
         return const ProfileScreen();
       default:
-        return Center(child: Text('Module ${_selectedIndex + 1} Coming Soon'));
+        return _buildDashboardOverview();
     }
   }
 

@@ -149,7 +149,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () {
-                // TODO: Implement Edit Profile
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Profile editing will be enabled in the next update.')),
+                );
               },
               icon: const Icon(Icons.edit_outlined),
               label: const Text('Edit Profile'),

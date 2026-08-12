@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/constants/app_constants.dart';
+import '../../stations/data/station_repository.dart';
+import '../../faults/data/fault_repository.dart';
+import '../data/prediction_repository.dart';
 
 class PredictiveMaintenanceForm extends ConsumerStatefulWidget {
   const PredictiveMaintenanceForm({super.key});
@@ -16,6 +18,7 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
   final _formKey = GlobalKey<FormState>();
   final Dio _dio = Dio();
   bool _isLoading = false;
+  String? _selectedStationId;
 
   // Controllers for the 7 core numeric KPIs
   final TextEditingController _availabilityController = TextEditingController();
@@ -113,16 +116,43 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
 
         if (response.statusCode == 200) {
           final predictionResult = response.data;
+          final riskLevel = predictionResult['confidence'] > 0.8 ? 'High' : (predictionResult['confidence'] > 0.5 ? 'Medium' : 'Low');
           
-          // Save to Supabase
+          // 2. Save prediction to Supabase
           await Supabase.instance.client.from('predictions').insert({
+            'station_id': _selectedStationId,
             'fault_type': predictionResult['predicted_fault'],
             'probability': predictionResult['confidence'],
-            'risk_level': predictionResult['confidence'] > 0.8 ? 'High' : (predictionResult['confidence'] > 0.5 ? 'Medium' : 'Low'),
-            'recommended_action': 'ML generated prediction from KPI input.',
+            'risk_level': riskLevel,
+            'recommended_action': 'ML generated prediction for ${predictionResult['predicted_fault']}.',
           });
 
+          // 3. If High Risk, automatically create an Alarm Log
+          if (riskLevel == 'High') {
+            await Supabase.instance.client.from('alarm_logs').insert({
+              'station_id': _selectedStationId,
+              'severity': 'Critical',
+              'description': 'AI PREDICTION: High risk of ${predictionResult['predicted_fault']} detected.',
+              'status': 'Open',
+            });
+            ref.invalidate(alarmsProvider);
+          }
+
+          // 4. Refresh global state to make all other screens work based on the new prediction
+          ref.invalidate(predictionsProvider);
+          ref.invalidate(stationsProvider); // In case health status changed (not directly linked yet but good practice)
+
           if (!mounted) return;
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(riskLevel == 'High' 
+                ? 'Prediction saved and Critical Alarm generated!' 
+                : 'Prediction saved successfully.'),
+              backgroundColor: riskLevel == 'High' ? Colors.red : Colors.green,
+            ),
+          );
+
           _showResultDialog(predictionResult);
         } else {
           throw Exception("Failed to get prediction");
@@ -221,6 +251,8 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
 
   @override
   Widget build(BuildContext context) {
+    final stationsAsync = ref.watch(stationsProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Telecom Maintenance Predictor')),
       body: _isLoading 
@@ -231,6 +263,29 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
               key: _formKey,
               child: ListView(
                 children: [
+                  const Text(
+                    "Select Target Station",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  stationsAsync.when(
+                    data: (stations) => DropdownButtonFormField<String>(
+                      value: _selectedStationId,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        helperText: "Select the base station to analyze.",
+                      ),
+                      items: stations.map((s) => DropdownMenuItem(
+                        value: s.id,
+                        child: Text("${s.name} (${s.siteId})"),
+                      )).toList(),
+                      onChanged: (val) => setState(() => _selectedStationId = val),
+                      validator: (v) => v == null ? 'Please select a station' : null,
+                    ),
+                    loading: () => const LinearProgressIndicator(),
+                    error: (err, _) => Text('Error loading stations: $err'),
+                  ),
+                  const SizedBox(height: 24),
                   const Text(
                     "Enter Cell Site KPIs",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),

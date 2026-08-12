@@ -55,21 +55,21 @@ class ReportsScreen extends StatelessWidget {
         if (constraints.maxWidth < 700) {
           return Column(
             children: [
-              _buildSummaryCard(context, 'Last Month', '12 Reports', Icons.history),
+              _buildSummaryCard(context, 'Total Generated', '0 Reports', Icons.history),
               const SizedBox(height: 12),
-              _buildSummaryCard(context, 'Scheduled', '4 Reports', Icons.schedule),
+              _buildSummaryCard(context, 'Scheduled', '0 Reports', Icons.schedule),
               const SizedBox(height: 12),
-              _buildSummaryCard(context, 'Failed', '0', Icons.error_outline),
+              _buildSummaryCard(context, 'Last Run', 'N/A', Icons.timer),
             ],
           );
         }
         return Row(
           children: [
-            Expanded(child: _buildSummaryCard(context, 'Last Month', '12 Reports', Icons.history)),
+            Expanded(child: _buildSummaryCard(context, 'Total Generated', '0 Reports', Icons.history)),
             const SizedBox(width: 16),
-            Expanded(child: _buildSummaryCard(context, 'Scheduled', '4 Reports', Icons.schedule)),
+            Expanded(child: _buildSummaryCard(context, 'Scheduled', '0 Reports', Icons.schedule)),
             const SizedBox(width: 16),
-            Expanded(child: _buildSummaryCard(context, 'Failed', '0', Icons.error_outline)),
+            Expanded(child: _buildSummaryCard(context, 'Last Run', 'N/A', Icons.timer)),
           ],
         );
       }
@@ -121,30 +121,15 @@ class ReportsScreen extends StatelessWidget {
   }
 
   Widget _buildReportsList() {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: 8,
-      itemBuilder: (context, index) => _buildReportItem(index),
-    );
-  }
-
-  Widget _buildReportItem(int index) {
-    final isPdf = index % 2 == 0;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Icon(
-          isPdf ? Icons.picture_as_pdf : Icons.table_chart,
-          color: isPdf ? AppColors.error : AppColors.success,
-        ),
-        title: Text('Network_Analysis_Q${index + 1}_2026.${isPdf ? "pdf" : "csv"}'),
-        subtitle: Text('Generated: Aug ${10 - index}, 2026 • 2.4 MB'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(40.0),
+        child: Column(
           children: [
-            IconButton(icon: const Icon(Icons.download), onPressed: () {}),
-            IconButton(icon: const Icon(Icons.share), onPressed: () {}),
+            Icon(Icons.description_outlined, size: 48, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('No reports generated yet.', style: TextStyle(color: Colors.grey)),
+            Text('Use the "Generate Report" button to create one.', style: TextStyle(color: Colors.grey, fontSize: 12)),
           ],
         ),
       ),
