@@ -36,6 +36,13 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _selectedIndex = 0;
 
+  @override
+  void dispose() {
+    // Clear map controller when dashboard is disposed to avoid using a dead controller
+    ref.read(dashboardMapControllerProvider.notifier).state = null;
+    super.dispose();
+  }
+
   Widget _buildContent() {
     switch (_selectedIndex) {
       case 0:

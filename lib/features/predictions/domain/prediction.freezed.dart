@@ -33,6 +33,12 @@ mixin _$Prediction {
   String get riskLevel => throw _privateConstructorUsedError;
   @JsonKey(name: 'recommended_action')
   String? get recommendedAction => throw _privateConstructorUsedError;
+  @JsonKey(name: 'dcr_cssr_ratio')
+  double? get dcrCssrRatio => throw _privateConstructorUsedError;
+  @JsonKey(name: 'tp_prb_efficiency')
+  double? get tpPrbEfficiency => throw _privateConstructorUsedError;
+  @JsonKey(name: 'avail_x_cssr')
+  double? get availXCssr => throw _privateConstructorUsedError;
   @JsonKey(name: 'created_at')
   String get createdAt => throw _privateConstructorUsedError;
 
@@ -61,6 +67,9 @@ abstract class $PredictionCopyWith<$Res> {
     double probability,
     @JsonKey(name: 'risk_level') String riskLevel,
     @JsonKey(name: 'recommended_action') String? recommendedAction,
+    @JsonKey(name: 'dcr_cssr_ratio') double? dcrCssrRatio,
+    @JsonKey(name: 'tp_prb_efficiency') double? tpPrbEfficiency,
+    @JsonKey(name: 'avail_x_cssr') double? availXCssr,
     @JsonKey(name: 'created_at') String createdAt,
   });
 }
@@ -87,6 +96,9 @@ class _$PredictionCopyWithImpl<$Res, $Val extends Prediction>
     Object? probability = null,
     Object? riskLevel = null,
     Object? recommendedAction = freezed,
+    Object? dcrCssrRatio = freezed,
+    Object? tpPrbEfficiency = freezed,
+    Object? availXCssr = freezed,
     Object? createdAt = null,
   }) {
     return _then(
@@ -119,6 +131,18 @@ class _$PredictionCopyWithImpl<$Res, $Val extends Prediction>
                 ? _value.recommendedAction
                 : recommendedAction // ignore: cast_nullable_to_non_nullable
                       as String?,
+            dcrCssrRatio: freezed == dcrCssrRatio
+                ? _value.dcrCssrRatio
+                : dcrCssrRatio // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            tpPrbEfficiency: freezed == tpPrbEfficiency
+                ? _value.tpPrbEfficiency
+                : tpPrbEfficiency // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            availXCssr: freezed == availXCssr
+                ? _value.availXCssr
+                : availXCssr // ignore: cast_nullable_to_non_nullable
+                      as double?,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -146,6 +170,9 @@ abstract class _$$PredictionImplCopyWith<$Res>
     double probability,
     @JsonKey(name: 'risk_level') String riskLevel,
     @JsonKey(name: 'recommended_action') String? recommendedAction,
+    @JsonKey(name: 'dcr_cssr_ratio') double? dcrCssrRatio,
+    @JsonKey(name: 'tp_prb_efficiency') double? tpPrbEfficiency,
+    @JsonKey(name: 'avail_x_cssr') double? availXCssr,
     @JsonKey(name: 'created_at') String createdAt,
   });
 }
@@ -171,6 +198,9 @@ class __$$PredictionImplCopyWithImpl<$Res>
     Object? probability = null,
     Object? riskLevel = null,
     Object? recommendedAction = freezed,
+    Object? dcrCssrRatio = freezed,
+    Object? tpPrbEfficiency = freezed,
+    Object? availXCssr = freezed,
     Object? createdAt = null,
   }) {
     return _then(
@@ -203,6 +233,18 @@ class __$$PredictionImplCopyWithImpl<$Res>
             ? _value.recommendedAction
             : recommendedAction // ignore: cast_nullable_to_non_nullable
                   as String?,
+        dcrCssrRatio: freezed == dcrCssrRatio
+            ? _value.dcrCssrRatio
+            : dcrCssrRatio // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        tpPrbEfficiency: freezed == tpPrbEfficiency
+            ? _value.tpPrbEfficiency
+            : tpPrbEfficiency // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        availXCssr: freezed == availXCssr
+            ? _value.availXCssr
+            : availXCssr // ignore: cast_nullable_to_non_nullable
+                  as double?,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -223,6 +265,9 @@ class _$PredictionImpl implements _Prediction {
     required this.probability,
     @JsonKey(name: 'risk_level') required this.riskLevel,
     @JsonKey(name: 'recommended_action') this.recommendedAction,
+    @JsonKey(name: 'dcr_cssr_ratio') this.dcrCssrRatio,
+    @JsonKey(name: 'tp_prb_efficiency') this.tpPrbEfficiency,
+    @JsonKey(name: 'avail_x_cssr') this.availXCssr,
     @JsonKey(name: 'created_at') required this.createdAt,
   });
 
@@ -249,12 +294,21 @@ class _$PredictionImpl implements _Prediction {
   @JsonKey(name: 'recommended_action')
   final String? recommendedAction;
   @override
+  @JsonKey(name: 'dcr_cssr_ratio')
+  final double? dcrCssrRatio;
+  @override
+  @JsonKey(name: 'tp_prb_efficiency')
+  final double? tpPrbEfficiency;
+  @override
+  @JsonKey(name: 'avail_x_cssr')
+  final double? availXCssr;
+  @override
   @JsonKey(name: 'created_at')
   final String createdAt;
 
   @override
   String toString() {
-    return 'Prediction(id: $id, stationId: $stationId, equipmentId: $equipmentId, faultType: $faultType, probability: $probability, riskLevel: $riskLevel, recommendedAction: $recommendedAction, createdAt: $createdAt)';
+    return 'Prediction(id: $id, stationId: $stationId, equipmentId: $equipmentId, faultType: $faultType, probability: $probability, riskLevel: $riskLevel, recommendedAction: $recommendedAction, dcrCssrRatio: $dcrCssrRatio, tpPrbEfficiency: $tpPrbEfficiency, availXCssr: $availXCssr, createdAt: $createdAt)';
   }
 
   @override
@@ -275,6 +329,12 @@ class _$PredictionImpl implements _Prediction {
                 other.riskLevel == riskLevel) &&
             (identical(other.recommendedAction, recommendedAction) ||
                 other.recommendedAction == recommendedAction) &&
+            (identical(other.dcrCssrRatio, dcrCssrRatio) ||
+                other.dcrCssrRatio == dcrCssrRatio) &&
+            (identical(other.tpPrbEfficiency, tpPrbEfficiency) ||
+                other.tpPrbEfficiency == tpPrbEfficiency) &&
+            (identical(other.availXCssr, availXCssr) ||
+                other.availXCssr == availXCssr) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt));
   }
@@ -290,6 +350,9 @@ class _$PredictionImpl implements _Prediction {
     probability,
     riskLevel,
     recommendedAction,
+    dcrCssrRatio,
+    tpPrbEfficiency,
+    availXCssr,
     createdAt,
   );
 
@@ -316,6 +379,9 @@ abstract class _Prediction implements Prediction {
     required final double probability,
     @JsonKey(name: 'risk_level') required final String riskLevel,
     @JsonKey(name: 'recommended_action') final String? recommendedAction,
+    @JsonKey(name: 'dcr_cssr_ratio') final double? dcrCssrRatio,
+    @JsonKey(name: 'tp_prb_efficiency') final double? tpPrbEfficiency,
+    @JsonKey(name: 'avail_x_cssr') final double? availXCssr,
     @JsonKey(name: 'created_at') required final String createdAt,
   }) = _$PredictionImpl;
 
@@ -341,6 +407,15 @@ abstract class _Prediction implements Prediction {
   @override
   @JsonKey(name: 'recommended_action')
   String? get recommendedAction;
+  @override
+  @JsonKey(name: 'dcr_cssr_ratio')
+  double? get dcrCssrRatio;
+  @override
+  @JsonKey(name: 'tp_prb_efficiency')
+  double? get tpPrbEfficiency;
+  @override
+  @JsonKey(name: 'avail_x_cssr')
+  double? get availXCssr;
   @override
   @JsonKey(name: 'created_at')
   String get createdAt;

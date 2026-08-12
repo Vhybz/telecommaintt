@@ -31,6 +31,9 @@ class KPIInput(BaseModel):
     CELL_TROUGHPUT: float
     PRB_UTILIZATION: float
     REGION: str
+    DCR_CSSR_ratio: Optional[float] = None
+    TP_PRB_efficiency: Optional[float] = None
+    AVAIL_x_CSSR: Optional[float] = None
 
 class PredictionResponse(BaseModel):
     predicted_fault: str

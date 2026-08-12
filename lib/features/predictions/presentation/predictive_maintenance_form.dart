@@ -122,16 +122,25 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
       setState(() => _isLoading = true);
       
       try {
-        // 1. Build the simple payload (the Python backend handles preprocessing)
+        final double avail = double.parse(_availabilityController.text);
+        final double cssr = double.parse(_cssrController.text);
+        final double dcr = double.parse(_dcrController.text);
+        final double throughput = double.parse(_throughputController.text);
+        final double prb = double.parse(_prbController.text);
+
+        // 1. Build the payload with derived features
         final Map<String, dynamic> payload = {
-          "AVAILABILITY": double.parse(_availabilityController.text),
+          "AVAILABILITY": avail,
           "ERAB_Establishment_SUCCESS_RATE": double.parse(_erabController.text),
-          "CALL_SET_UP_SUCCESS_RATE": double.parse(_cssrController.text),
-          "DROP_CALL_RATE": double.parse(_dcrController.text),
+          "CALL_SET_UP_SUCCESS_RATE": cssr,
+          "DROP_CALL_RATE": dcr,
           "AVERAGE_LATENCY": double.parse(_latencyController.text),
-          "CELL_TROUGHPUT": double.parse(_throughputController.text),
-          "PRB_UTILIZATION": double.parse(_prbController.text),
+          "CELL_TROUGHPUT": throughput,
+          "PRB_UTILIZATION": prb,
           "REGION": _selectedRegion,
+          "DCR_CSSR_ratio": dcr / (cssr + 1e-9),
+          "TP_PRB_efficiency": throughput / (prb + 1e-9),
+          "AVAIL_x_CSSR": avail * cssr,
         };
 
         final response = await _dio.post(
@@ -150,6 +159,9 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
             'probability': predictionResult['confidence'],
             'risk_level': riskLevel,
             'recommended_action': 'ML generated prediction for ${predictionResult['predicted_fault']}.',
+            'dcr_cssr_ratio': payload['DCR_CSSR_ratio'],
+            'tp_prb_efficiency': payload['TP_PRB_efficiency'],
+            'avail_x_cssr': payload['AVAIL_x_CSSR'],
           });
 
           // 3. If High Risk, automatically create an Alarm Log
@@ -167,13 +179,19 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
           ref.invalidate(predictionsProvider);
           ref.invalidate(stationsProvider);
 
-          // 5. Update Map Focus on Dashboard
+          // 5. Update Map Focus on Dashboard (Safe check for disposed controller)
           if (_selectedRegion != null && _regionCenters.containsKey(_selectedRegion)) {
             final target = _regionCenters[_selectedRegion]!;
             ref.read(dashboardMapCenterProvider.notifier).state = target;
             
             final controller = ref.read(dashboardMapControllerProvider);
-            controller?.animateCamera(google.CameraUpdate.newLatLngZoom(target, 10));
+            if (controller != null) {
+              try {
+                controller.animateCamera(google.CameraUpdate.newLatLngZoom(target, 10));
+              } catch (e) {
+                debugPrint("Map controller was already disposed: $e");
+              }
+            }
           }
 
           if (!mounted) return;

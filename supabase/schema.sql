@@ -82,9 +82,12 @@ CREATE TABLE IF NOT EXISTS public.predictions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     station_id UUID REFERENCES public.base_stations(id) ON DELETE CASCADE,
     fault_type TEXT,
-    probability DECIMAL(5, 4), -- supports 0.9999
+    probability DECIMAL(10, 8), -- higher precision for confidence
     risk_level TEXT CHECK (risk_level IN ('High', 'Medium', 'Low')),
     recommended_action TEXT,
+    dcr_cssr_ratio DECIMAL(10, 8),
+    tp_prb_efficiency DECIMAL(10, 8),
+    avail_x_cssr DECIMAL(10, 8),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

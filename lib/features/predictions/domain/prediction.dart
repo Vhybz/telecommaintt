@@ -13,6 +13,9 @@ abstract class Prediction with _$Prediction {
     required double probability,
     @JsonKey(name: 'risk_level') required String riskLevel,
     @JsonKey(name: 'recommended_action') String? recommendedAction,
+    @JsonKey(name: 'dcr_cssr_ratio') double? dcrCssrRatio,
+    @JsonKey(name: 'tp_prb_efficiency') double? tpPrbEfficiency,
+    @JsonKey(name: 'avail_x_cssr') double? availXCssr,
     @JsonKey(name: 'created_at') required String createdAt,
   }) = _Prediction;
 
