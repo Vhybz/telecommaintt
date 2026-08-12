@@ -191,13 +191,13 @@ class _MaintenanceScreenState extends ConsumerState<MaintenanceScreen> with Sing
                           try {
                             await ref.read(maintenanceRepositoryProvider).updateTaskStatus(task['id'], 'Completed');
                             ref.invalidate(maintenanceTasksProvider);
-                            if (context.mounted) {
+                            if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Task marked as completed')),
                               );
                             }
                           } catch (e) {
-                            if (context.mounted) {
+                            if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
                               );

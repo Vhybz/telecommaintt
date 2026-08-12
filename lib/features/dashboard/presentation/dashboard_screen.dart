@@ -20,11 +20,11 @@ import '../../stations/data/station_repository.dart';
 import '../../predictions/data/prediction_repository.dart';
 import '../../predictions/data/model_metadata_repository.dart';
 import '../../faults/data/fault_repository.dart';
+import '../../maintenance/data/maintenance_repository.dart';
+import 'package:intl/intl.dart';
 
 final dashboardMapControllerProvider = StateProvider<google.GoogleMapController?>((ref) => null);
 final dashboardMapCenterProvider = StateProvider<google.LatLng>((ref) => const google.LatLng(7.9465, -1.0232)); // Center of Ghana
-
-import '../../maintenance/data/maintenance_repository.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -201,7 +201,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ? const Icon(Icons.person, color: Colors.white, size: 22)
                     : null,
               ),
-              loading: () => const CircleAvatar(radius: 18, child: CircularProgressIndicator()),
+              loading: () => const CircleAvatar(radius: 18, child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))),
               error: (_, error) => const CircleAvatar(radius: 18, child: Icon(Icons.person)),
             ),
           ),
@@ -287,7 +287,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, error) => const SizedBox.shrink(),
+      error: (error, stack) => const SizedBox.shrink(),
     );
   }
 
@@ -329,14 +329,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   'v${metadata.version}'
                 ),
                 loading: () => _buildStatCard('Model Accuracy', '...', Icons.psychology_outlined, AppColors.secondary, 'Loading...'),
-                error: (_, error) => _buildStatCard('Model Accuracy', 'N/A', Icons.psychology_outlined, AppColors.secondary, 'Error'),
+                error: (error, stack) => _buildStatCard('Model Accuracy', 'N/A', Icons.psychology_outlined, AppColors.secondary, 'Error'),
               ),
             ],
           );
         });
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, error) => const Center(child: Text('Error loading stats')),
+      error: (error, stack) => const Center(child: Text('Error loading stats')),
     );
   }
 
@@ -842,7 +842,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => const Text('Error loading tasks'),
+              error: (error, stack) => const Text('Error loading tasks'),
             ),
           ],
         ),

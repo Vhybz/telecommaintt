@@ -92,7 +92,7 @@ class _AddStationDialogState extends ConsumerState<AddStationDialog> {
                   validator: (v) => v == null ? 'Required' : null,
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Error loading regions'),
+                error: (error, stack) => const Text('Error loading regions'),
               ),
               DropdownButtonFormField<String>(
                 value: _selectedStatus,

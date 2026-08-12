@@ -3,8 +3,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:lottie/lottie.dart';
 import '../../../core/theme/app_colors.dart';
 
-import '../../maintenance/presentation/add_task_dialog.dart';
-
 class KpisScreen extends StatelessWidget {
   const KpisScreen({super.key});
 
@@ -21,7 +19,7 @@ class KpisScreen extends StatelessWidget {
           const SizedBox(height: 24),
           _buildAnimatedSection(child: _buildThroughputChart(), delay: 400),
           const SizedBox(height: 24),
-          _buildAnimatedSection(child: _buildKpiTable(), delay: 600),
+          _buildAnimatedSection(child: _buildKpiTable(context), delay: 600),
         ],
       ),
     );
@@ -230,25 +228,30 @@ class KpisScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildKpiTable() {
+  Widget _buildKpiTable(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('KPI Breakdown', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            TextButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Generating KPI analysis report...')),
-                );
-              },
-              icon: const Icon(Icons.picture_as_pdf, size: 16),
-              label: const Text('Export PDF', style: TextStyle(fontSize: 12)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('KPI Breakdown', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                TextButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Generating KPI analysis report...')),
+                    );
+                  },
+                  icon: const Icon(Icons.picture_as_pdf, size: 16),
+                  label: const Text('Export PDF', style: TextStyle(fontSize: 12)),
+                ),
+              ],
             ),
-          ],
-        ),
+            const SizedBox(height: 16),
+            Table(
               columnWidths: const {
                 0: FlexColumnWidth(2),
                 1: FlexColumnWidth(1),

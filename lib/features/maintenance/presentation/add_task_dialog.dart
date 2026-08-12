@@ -61,8 +61,6 @@ class _AddTaskDialogState extends ConsumerState<AddTaskDialog> {
   @override
   Widget build(BuildContext context) {
     final stationsAsync = ref.watch(stationsProvider);
-    // Ideally we'd have a techs provider, but for now we'll just use profiles
-    final profileAsync = ref.watch(userProfileProvider);
 
     return AlertDialog(
       title: const Text('Create Maintenance Task'),
@@ -81,7 +79,7 @@ class _AddTaskDialogState extends ConsumerState<AddTaskDialog> {
                   validator: (v) => v == null ? 'Required' : null,
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Error loading stations'),
+                error: (error, stack) => const Text('Error loading stations'),
               ),
               const SizedBox(height: 16),
               TextFormField(
