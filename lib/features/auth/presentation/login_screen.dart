@@ -17,6 +17,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -134,15 +135,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         const SizedBox(height: 24),
                         TextFormField(
                           controller: _passwordController,
-                          obscureText: true,
+                          obscureText: _obscurePassword,
                           keyboardType: TextInputType.visiblePassword,
                           textInputAction: TextInputAction.done,
                           inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
                           onFieldSubmitted: (_) => _login(),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Password',
-                            prefixIcon: Icon(Icons.lock_outline),
-                            border: OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+                              ),
+                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                            ),
                           ),
                           validator: (value) => value?.isEmpty ?? true ? 'Enter password' : null,
                         ),

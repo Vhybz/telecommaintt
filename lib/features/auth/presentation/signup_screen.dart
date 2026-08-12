@@ -23,6 +23,44 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _confirmPasswordController = TextEditingController();
   
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  double _strength = 0;
+  String _strengthText = '';
+  Color _strengthColor = Colors.grey;
+
+  void _checkPasswordStrength(String value) {
+    double strength = 0;
+    if (value.isEmpty) {
+      strength = 0;
+    } else if (value.length < 6) {
+      strength = 0.25;
+    } else {
+      strength = 0.5;
+      if (RegExp(r'[A-Z]').hasMatch(value) && RegExp(r'[0-9]').hasMatch(value)) {
+        strength = 0.75;
+      }
+      if (RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value) && value.length >= 8) {
+        strength = 1.0;
+      }
+    }
+
+    setState(() {
+      _strength = strength;
+      if (strength <= 0.25) {
+        _strengthText = 'Weak';
+        _strengthColor = Colors.red;
+      } else if (strength <= 0.5) {
+        _strengthText = 'Fair';
+        _strengthColor = Colors.orange;
+      } else if (strength <= 0.75) {
+        _strengthText = 'Good';
+        _strengthColor = Colors.blue;
+      } else {
+        _strengthText = 'Strong';
+        _strengthColor = Colors.green;
+      }
+    });
+  }
 
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
@@ -202,17 +240,42 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                           controller: _passwordController,
                           label: 'Password',
                           icon: Icons.lock_outline,
-                          obscureText: true,
+                          obscureText: _obscurePassword,
+                          onChanged: _checkPasswordStrength,
                           inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+                            ),
+                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          ),
                           validator: (v) => (v?.length ?? 0) < 6 ? 'Min 6 characters' : null,
                         ),
+                        if (_passwordController.text.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: _strength,
+                              backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                              color: _strengthColor,
+                              minHeight: 4,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Password strength: $_strengthText',
+                            style: TextStyle(fontSize: 12, color: _strengthColor, fontWeight: FontWeight.bold),
+                          ),
+                        ],
                         const SizedBox(height: 20),
                         
                         _buildTextField(
                           controller: _confirmPasswordController,
                           label: 'Confirm Password',
                           icon: Icons.lock_clock_outlined,
-                          obscureText: true,
+                          obscureText: _obscurePassword,
                           textInputAction: TextInputAction.done,
                           inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
                           validator: (v) {
@@ -268,6 +331,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     TextCapitalization textCapitalization = TextCapitalization.none,
     TextInputAction textInputAction = TextInputAction.next,
     bool obscureText = false,
+    Widget? suffixIcon,
+    Function(String)? onChanged,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
@@ -277,9 +342,11 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       inputFormatters: inputFormatters,
       textCapitalization: textCapitalization,
       textInputAction: textInputAction,
+      onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon),
+        suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
         ),

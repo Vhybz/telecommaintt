@@ -35,6 +35,7 @@ class PredictionListScreen extends ConsumerWidget {
 
   Widget _buildPredictionCard(BuildContext context, Prediction prediction) {
     Color riskColor = _getRiskColor(prediction.riskLevel);
+    final String displayStationId = prediction.stationId ?? 'Unknown';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -76,7 +77,11 @@ class PredictionListScreen extends ConsumerWidget {
               children: [
                 _buildInfoItem(context, 'Probability', '${(prediction.probability * 100).toInt()}%'),
                 const SizedBox(width: 48),
-                _buildInfoItem(context, 'Station ID', prediction.stationId.substring(0, 8)),
+                _buildInfoItem(
+                  context, 
+                  'Station ID', 
+                  displayStationId.length > 8 ? displayStationId.substring(0, 8) : displayStationId,
+                ),
               ],
             ),
             const SizedBox(height: 16),

@@ -90,7 +90,6 @@ class AuthRepository {
       
       return profile;
     } catch (e) {
-      print('Error in getUserProfile: $e');
       return null;
     }
   }
