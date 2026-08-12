@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../stations/data/station_repository.dart';
 import '../../faults/data/fault_repository.dart';
 import '../data/prediction_repository.dart';
+import '../../../core/constants/app_constants.dart';
 
 class PredictiveMaintenanceForm extends ConsumerStatefulWidget {
   const PredictiveMaintenanceForm({super.key});
