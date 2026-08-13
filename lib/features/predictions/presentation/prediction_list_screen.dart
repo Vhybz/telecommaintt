@@ -47,34 +47,27 @@ class PredictionListScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                Icon(Icons.online_prediction, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Row(
-                    children: [
-                      Icon(Icons.online_prediction, color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          prediction.faultType ?? 'Unknown Fault',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    prediction.faultType ?? 'Unknown Fault',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: riskColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '${prediction.riskLevel ?? "Low"} Risk',
-                    style: TextStyle(color: riskColor, fontWeight: FontWeight.bold, fontSize: 12),
+                    style: TextStyle(color: riskColor, fontWeight: FontWeight.bold, fontSize: 10),
                   ),
                 ),
               ],
@@ -83,9 +76,9 @@ class PredictionListScreen extends ConsumerWidget {
             const Divider(),
             const SizedBox(height: 16),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildInfoItem(context, 'Probability', '${(prediction.probability * 100).toInt()}%'),
-                const SizedBox(width: 48),
                 _buildInfoItem(
                   context, 
                   'Station ID', 

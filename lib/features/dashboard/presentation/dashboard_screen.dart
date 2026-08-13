@@ -334,8 +334,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           
           double aspectRatio = constraints.maxWidth > 1400 ? 2.0 : 1.8;
           if (constraints.maxWidth < 800) aspectRatio = 1.6;
-          if (constraints.maxWidth < 600) aspectRatio = 1.4;
-          if (constraints.maxWidth < 500) aspectRatio = 2.4; // Taller for single column
+          if (constraints.maxWidth < 600) aspectRatio = 1.3; // Taller for tablets
+          if (constraints.maxWidth < 500) aspectRatio = 2.2; // Much taller for single column mobile
           
           return GridView.count(
             shrinkWrap: true,
@@ -378,7 +378,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.05)),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+        padding: const EdgeInsets.all(10.0), // Further reduced padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -394,7 +394,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     overflow: TextOverflow.ellipsis
                   ),
                 ),
-                Icon(icon, color: color, size: 16),
+                Icon(icon, color: color, size: 14),
               ],
             ),
             Column(
@@ -1085,29 +1085,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           children: [
             LayoutBuilder(
               builder: (context, constraints) {
-                if (constraints.maxWidth < 450) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Network Trends', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 12),
-                      ToggleButtons(
-                        isSelected: const [true, false, false],
-                        onPressed: (i) {},
-                        constraints: const BoxConstraints(minHeight: 28, minWidth: 45),
-                        borderRadius: BorderRadius.circular(8),
-                        children: const [Text('24H', style: TextStyle(fontSize: 10)), Text('7D', style: TextStyle(fontSize: 10)), Text('30D', style: TextStyle(fontSize: 10))],
-                      ),
-                    ],
-                  );
-                }
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                return Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  runSpacing: 12,
                   children: [
-                    const Expanded(
-                      child: Text('Network Trends', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: constraints.maxWidth > 400 ? constraints.maxWidth - 160 : constraints.maxWidth),
+                      child: const Text(
+                        'Network Trends', 
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    const SizedBox(width: 8),
                     ToggleButtons(
                       isSelected: const [true, false, false],
                       onPressed: (i) {},
@@ -1143,11 +1135,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true, 
-                            reservedSize: 35,
-                            interval: 20, // Explicit interval to prevent overlap
+                            reservedSize: 30,
+                            interval: 25, // Clearer intervals
                             getTitlesWidget: (value, meta) {
                               if (value > 100) return const SizedBox.shrink();
-                              return Text(value.toInt().toString(), style: const TextStyle(fontSize: 10));
+                              return Text(value.toInt().toString(), style: const TextStyle(fontSize: 9));
                             },
                           ),
                         ),
@@ -1157,7 +1149,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           sideTitles: SideTitles(
                             showTitles: true, 
                             reservedSize: 22,
-                            interval: 3, // Show label every 3 points to prevent overlap
+                            interval: 4, // Show label every 4 points
                             getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 9)),
                           ),
                         ),
