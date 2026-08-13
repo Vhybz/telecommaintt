@@ -40,7 +40,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   void dispose() {
-    // Clear map controller when dashboard is disposed to avoid using a dead controller
     ref.read(dashboardMapControllerProvider.notifier).state = null;
     super.dispose();
   }
@@ -76,24 +75,39 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDesktop = MediaQuery.of(context).size.width > 1100;
+
     return Scaffold(
-      drawer: SideDrawer(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-      ),
-      body: Column(
+      drawer: isDesktop 
+          ? null 
+          : SideDrawer(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+            ),
+      body: Row(
         children: [
-          _buildAppBar(),
+          if (isDesktop)
+            SideDrawer(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+              isDrawer: false,
+            ),
           Expanded(
-            child: _buildContent(),
+            child: Column(
+              children: [
+                _buildAppBar(isDesktop),
+                Expanded(
+                  child: _buildContent(),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-
-  Widget _buildAppBar() {
+  Widget _buildAppBar(bool isDesktop) {
     final profileAsync = ref.watch(userProfileProvider);
     
     return Container(
@@ -109,13 +123,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
       child: Row(
         children: [
-          Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu_rounded),
-              onPressed: () => Scaffold.of(context).openDrawer(),
+          if (!isDesktop) ...[
+            Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu_rounded),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
             ),
-          ),
-          const SizedBox(width: 16),
+            const SizedBox(width: 8),
+          ],
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -133,29 +149,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   loading: () => const SizedBox(height: 12, width: 100, child: LinearProgressIndicator()),
-                  error: (_, error) => Text(
+                  error: (error, stack) => Text(
                     'Welcome back 👋',
                     style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Date & Time
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.calendar_today_outlined, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                const SizedBox(width: 8),
-                Text(
-                  '${DateTime.now().day} ${_getMonth(DateTime.now().month)} ${DateTime.now().year}, ${_formatTime(DateTime.now())}',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -208,24 +205,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(width: 16),
-          GestureDetector(
-            onTap: () => setState(() => _selectedIndex = 10),
-            child: profileAsync.when(
-              data: (profile) => CircleAvatar(
-                radius: 18,
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                backgroundImage: profile?['avatar_url'] != null 
-                    ? NetworkImage(profile!['avatar_url']) 
-                    : null,
-                child: profile?['avatar_url'] == null 
-                    ? const Icon(Icons.person, color: Colors.white, size: 22)
-                    : null,
+          if (isDesktop) ...[
+            const SizedBox(width: 16),
+            GestureDetector(
+              onTap: () => setState(() => _selectedIndex = 10),
+              child: profileAsync.when(
+                data: (profile) => CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  backgroundImage: profile?['avatar_url'] != null 
+                      ? NetworkImage(profile!['avatar_url']) 
+                      : null,
+                  child: profile?['avatar_url'] == null 
+                      ? const Icon(Icons.person, color: Colors.white, size: 22)
+                      : null,
+                ),
+                loading: () => const CircleAvatar(radius: 18, child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))),
+                error: (error, stack) => const CircleAvatar(radius: 18, child: Icon(Icons.person)),
               ),
-              loading: () => const CircleAvatar(radius: 18, child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))),
-              error: (_, error) => const CircleAvatar(radius: 18, child: Icon(Icons.person)),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -285,15 +284,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             builder: (context, constraints) {
               if (constraints.maxWidth < 600) {
                 return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary),
+                        Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary, size: 20),
                         const SizedBox(width: 12),
-                        const Text('AI Maintenance Insights', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const Expanded(
+                          child: Text('AI Maintenance Insights', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     Text(
                       highRiskCount > 0 
                         ? 'Urgent: $highRiskCount high-risk potential faults detected. Primary concern: $topFault.'
@@ -303,8 +305,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
-                      child: TextButton(
+                      child: OutlinedButton(
                         onPressed: () => setState(() => _selectedIndex = 5),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: BorderSide(color: Theme.of(context).colorScheme.primary),
+                        ),
                         child: const Text('Analyze Patterns'),
                       ),
                     ),
@@ -357,9 +363,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         final healthyPercent = total > 0 ? (healthy / total * 100).toStringAsFixed(1) : '0';
 
         return LayoutBuilder(builder: (context, constraints) {
-          int crossAxisCount = constraints.maxWidth > 1400 ? 5 : (constraints.maxWidth > 900 ? 3 : 2);
-          // Lower aspect ratio gives more height to cards to prevent bottom overflow
-          double aspectRatio = constraints.maxWidth > 1400 ? 2.0 : (constraints.maxWidth < 600 ? 1.4 : 1.8);
+          int crossAxisCount = constraints.maxWidth > 1400 ? 5 : (constraints.maxWidth > 800 ? 3 : 2);
+          if (constraints.maxWidth < 500) crossAxisCount = 1;
+          
+          double aspectRatio = constraints.maxWidth > 1400 ? 2.0 : 1.8;
+          if (constraints.maxWidth < 600) aspectRatio = 2.2;
+          if (constraints.maxWidth < 500) aspectRatio = 3.5;
           
           return GridView.count(
             shrinkWrap: true,
@@ -396,6 +405,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color, String subtitle) {
     return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.05)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -404,14 +418,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
-                Icon(icon, color: color, size: 20),
+                Expanded(child: Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                Icon(icon, color: color, size: 18),
               ],
             ),
             const Spacer(),
-            Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text(subtitle, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
+            Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 2),
+            Text(subtitle, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -468,6 +482,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             _buildLatestAlerts(),
             const SizedBox(height: 24),
             _buildTrendChart(),
+            const SizedBox(height: 24),
+            _buildMiniMap(),
+            const SizedBox(height: 24),
+            _buildMaintenanceTasksList(),
           ],
         );
       }
@@ -476,6 +494,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildFaultPredictionSummary() {
     final predictionsAsync = ref.watch(predictionsProvider);
+    final stationsAsync = ref.watch(stationsProvider);
     
     return Card(
       child: Padding(
@@ -493,31 +512,41 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             const SizedBox(height: 20),
             predictionsAsync.when(
               data: (predictions) {
+                if (predictions.isEmpty) return const Center(child: Text('No predictions available'));
                 final displayPredictions = predictions.take(5).toList();
-                return Table(
-                  columnWidths: const {
-                    0: FlexColumnWidth(1.2),
-                    1: FlexColumnWidth(2),
-                    2: FlexColumnWidth(1),
-                    3: FlexColumnWidth(1),
-                    4: FlexColumnWidth(1),
-                  },
-                  children: [
-                    _buildTableHeader(),
-                    ...displayPredictions.map((p) {
-                      String status = 'Active';
-                      if (p.riskLevel == 'High') status = 'Urgent';
-                      if (p.riskLevel == 'Medium') status = 'Review';
-                      
-                      return _buildTableRow(
-                        (p.stationId != null && p.stationId!.length > 8) ? p.stationId!.substring(0, 8) : (p.stationId ?? 'Unknown'),
-                        p.faultType ?? 'Unknown',
-                        '${(p.probability * 100).toStringAsFixed(0)}%',
-                        p.riskLevel ?? 'Low',
-                        status,
-                      );
-                    }),
-                  ],
+                
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 600),
+                    child: Table(
+                      columnWidths: const {
+                        0: FlexColumnWidth(2),
+                        1: FlexColumnWidth(2),
+                        2: FlexColumnWidth(1),
+                        3: FlexColumnWidth(1),
+                        4: FlexColumnWidth(1.2),
+                      },
+                      children: [
+                        _buildTableHeader(),
+                        ...displayPredictions.map((p) {
+                          String status = 'Active';
+                          if (p.riskLevel == 'High') status = 'Urgent';
+                          if (p.riskLevel == 'Medium') status = 'Review';
+                          
+                          final stationName = stationsAsync.asData?.value.where((s) => s.id == p.stationId).firstOrNull?.name ?? 'Unknown Site';
+                          
+                          return _buildTableRow(
+                            stationName,
+                            p.faultType ?? 'Unknown',
+                            '${(p.probability * 100).toStringAsFixed(0)}%',
+                            p.riskLevel ?? 'Low',
+                            status,
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -539,7 +568,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   TableRow _buildTableHeader() {
     return TableRow(
       children: [
-        Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text('Base Station', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant))),
+        Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text('Site Name', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant))),
         Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text('Predicted Fault', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant))),
         Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text('Prob.', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant))),
         Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text('Severity', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant))),
@@ -558,7 +587,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     
     return TableRow(
       children: [
-        Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(bs, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+        Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(bs, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis)),
         Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(fault, style: const TextStyle(fontSize: 12))),
         Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(prob, style: const TextStyle(fontSize: 12))),
         Padding(
@@ -730,11 +759,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   IconData _getSeverityIcon(String? severity) {
     if (severity == null) return Icons.check_circle_outline;
     switch (severity.toLowerCase()) {
-      case 'critical': return Icons.signal_cellular_connected_no_internet_4_bar;
+      case 'critical':
+      case 'high':
+        return Icons.signal_cellular_connected_no_internet_4_bar;
       case 'major':
-      case 'error': return Icons.error_outline;
+      case 'error':
+      case 'medium':
+        return Icons.error_outline;
       case 'minor':
-      case 'warning': return Icons.warning_amber;
+      case 'warning':
+        return Icons.warning_amber;
       default: return Icons.check_circle_outline;
     }
   }
@@ -760,7 +794,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
         child: Icon(icon, color: color, size: 18),
       ),
-      title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+      title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
       subtitle: Text(subtitle, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
       trailing: Text(time, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
     );
@@ -774,7 +808,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
-        height: 280,
+        height: 350,
         child: stationsAsync.when(
           data: (stations) {
             final predictions = predictionsAsync.asData?.value ?? [];
@@ -1078,7 +1112,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, __) => const Center(child: Text('Error loading trends')),
+                error: (error, stack) => const Center(child: Text('Error loading trends')),
               ),
             ),
             const SizedBox(height: 12),
