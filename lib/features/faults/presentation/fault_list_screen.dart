@@ -96,11 +96,12 @@ class FaultListScreen extends ConsumerWidget {
   }
 
   Color _getSeverityColor(String? severity) {
+    if (severity == null) return AppColors.success;
     switch (severity) {
       case 'Critical': return AppColors.critical;
       case 'Major': return AppColors.error;
       case 'Minor': return AppColors.warning;
-      default: return Colors.blue;
+      default: return AppColors.success;
     }
   }
 

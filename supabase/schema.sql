@@ -130,6 +130,17 @@ CREATE TABLE IF NOT EXISTS public.predictions (
 );
 
 -- 5. OPERATIONS
+-- REPORTS
+CREATE TABLE IF NOT EXISTS public.reports (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    type TEXT NOT NULL, -- e.g., Performance, Faults, Inventory
+    station_id UUID REFERENCES public.base_stations(id) ON DELETE SET NULL,
+    file_url TEXT,
+    created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- MAINTENANCE TASKS
 CREATE TABLE IF NOT EXISTS public.maintenance_tasks (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -209,3 +220,10 @@ FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
 -- Force Schema Cache Refresh (PostgREST)
 NOTIFY pgrst, 'reload schema';
+
+-- STORAGE BUCKETS
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('reports', 'reports', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Public Access" ON storage.objects FOR ALL USING (bucket_id = 'reports');

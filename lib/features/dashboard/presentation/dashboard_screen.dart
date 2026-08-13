@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' as google;
+import 'package:flutter_map/flutter_map.dart' as osm;
+import 'package:latlong2/latlong.dart' as latlong;
 import '../../stations/presentation/station_list_screen.dart';
 import '../../faults/presentation/fault_list_screen.dart';
 import '../../predictions/presentation/prediction_list_screen.dart';
@@ -24,8 +25,8 @@ import '../../maintenance/data/maintenance_repository.dart';
 import '../../kpis/data/kpi_repository.dart';
 import 'package:intl/intl.dart';
 
-final dashboardMapControllerProvider = StateProvider<google.GoogleMapController?>((ref) => null);
-final dashboardMapCenterProvider = StateProvider<google.LatLng>((ref) => const google.LatLng(7.9465, -1.0232)); // Center of Ghana
+final dashboardMapControllerProvider = StateProvider<osm.MapController?>((ref) => null);
+final dashboardMapCenterProvider = StateProvider<latlong.LatLng>((ref) => const latlong.LatLng(7.9465, -1.0232)); // Center of Ghana
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -203,7 +204,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   );
                 },
                 loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
+                error: (error, stack) => const SizedBox.shrink(),
               ),
             ],
           ),
@@ -515,7 +516,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   TableRow _buildTableRow(String bs, String fault, String prob, String sev, String status) {
-    Color sevColor = sev == 'Critical' ? AppColors.error : AppColors.warning;
+    Color sevColor = AppColors.success;
+    if (sev.toLowerCase() == 'critical' || sev.toLowerCase() == 'high') {
+      sevColor = AppColors.critical;
+    } else if (sev.toLowerCase() == 'major' || sev.toLowerCase() == 'medium') {
+      sevColor = AppColors.warning;
+    }
+    
     return TableRow(
       children: [
         Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(bs, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
@@ -672,11 +679,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Color _getSeverityColor(String? severity) {
     if (severity == null) return AppColors.success;
     switch (severity.toLowerCase()) {
-      case 'critical': return AppColors.critical;
+      case 'critical':
+      case 'high': 
+        return AppColors.critical;
       case 'major':
-      case 'error': return AppColors.error;
+      case 'error': 
+      case 'medium':
+        return AppColors.warning;
       case 'minor':
-      case 'warning': return AppColors.warning;
+      case 'warning':
+      case 'low':
+        return AppColors.success;
       default: return AppColors.success;
     }
   }
@@ -732,46 +745,50 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         child: stationsAsync.when(
           data: (stations) {
             final predictions = predictionsAsync.asData?.value ?? [];
+            final mapController = ref.read(dashboardMapControllerProvider) ?? osm.MapController();
             
-            // Create markers for all stations
+            // Ensure the controller is stored in the provider if it was just created
+            Future.microtask(() {
+              if (ref.read(dashboardMapControllerProvider) == null) {
+                ref.read(dashboardMapControllerProvider.notifier).state = mapController;
+              }
+            });
+
             final markers = stations.where((s) => s.latitude != null && s.longitude != null).map((station) {
-              // Find latest prediction for this station
               final stationPrediction = predictions.where((p) => p.stationId == station.id).firstOrNull;
               
-              double hue = google.BitmapDescriptor.hueAzure;
+              Color color = AppColors.secondary;
               if (stationPrediction != null) {
                 switch (stationPrediction.riskLevel) {
-                  case 'High': hue = google.BitmapDescriptor.hueRed; break;
-                  case 'Medium': hue = google.BitmapDescriptor.hueOrange; break;
-                  case 'Low': hue = google.BitmapDescriptor.hueGreen; break;
+                  case 'High': color = AppColors.critical; break;
+                  case 'Medium': color = AppColors.warning; break;
+                  case 'Low': color = AppColors.success; break;
                 }
               }
 
-              return google.Marker(
-                markerId: google.MarkerId(station.id),
-                position: google.LatLng(station.latitude!, station.longitude!),
-                icon: google.BitmapDescriptor.defaultMarkerWithHue(hue),
-                infoWindow: google.InfoWindow(
-                  title: station.name,
-                  snippet: stationPrediction != null 
-                    ? 'Risk: ${stationPrediction.riskLevel} (${stationPrediction.faultType})'
-                    : 'Status: ${station.status}',
-                ),
+              return osm.Marker(
+                point: latlong.LatLng(station.latitude!, station.longitude!),
+                width: 30,
+                height: 30,
+                child: Icon(Icons.location_on, color: color, size: 30),
               );
-            }).toSet();
+            }).toList();
 
             return Stack(
               children: [
-                google.GoogleMap(
-                  initialCameraPosition: google.CameraPosition(
-                    target: mapCenter,
-                    zoom: 6.5,
+                osm.FlutterMap(
+                  mapController: mapController,
+                  options: osm.MapOptions(
+                    initialCenter: mapCenter,
+                    initialZoom: 6.5,
                   ),
-                  onMapCreated: (controller) => ref.read(dashboardMapControllerProvider.notifier).state = controller,
-                  myLocationButtonEnabled: false,
-                  zoomControlsEnabled: false,
-                  mapType: google.MapType.normal,
-                  markers: markers,
+                  children: [
+                    osm.TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.telecomf',
+                    ),
+                    osm.MarkerLayer(markers: markers),
+                  ],
                 ),
                 Positioned(
                   top: 16,
@@ -802,14 +819,55 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildMapLegendItem('High Risk', Colors.red),
-                        _buildMapLegendItem('Medium Risk', Colors.orange),
-                        _buildMapLegendItem('Healthy', Colors.green),
-                        _buildMapLegendItem('No Data', Colors.blue),
+                        _buildMapLegendItem('High Risk', AppColors.critical),
+                        _buildMapLegendItem('Medium Risk', AppColors.warning),
+                        _buildMapLegendItem('Healthy', AppColors.success),
+                        _buildMapLegendItem('No Data', AppColors.secondary),
                       ],
                     ),
                   ),
                 ),
+                // Latest Prediction Summary Overlay
+                if (predictions.isNotEmpty)
+                  Positioned(
+                    bottom: 16,
+                    left: 16,
+                    right: 80, // Avoid overlapping with legend
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), blurRadius: 4),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'LATEST ANALYSIS', 
+                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary, letterSpacing: 0.5)
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(Icons.analytics_outlined, size: 14, color: _getSeverityColor(predictions.first.riskLevel)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '${stations.where((s) => s.id == predictions.first.stationId).firstOrNull?.name ?? "Unknown Site"}: ${predictions.first.faultType}',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             );
           },

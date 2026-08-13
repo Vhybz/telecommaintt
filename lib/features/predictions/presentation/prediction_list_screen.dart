@@ -120,12 +120,13 @@ class PredictionListScreen extends ConsumerWidget {
     );
   }
 
-  Color _getRiskColor(String risk) {
+  Color _getRiskColor(String? risk) {
+    if (risk == null) return AppColors.success;
     switch (risk) {
-      case 'High': return AppColors.error;
+      case 'High': return AppColors.critical;
       case 'Medium': return AppColors.warning;
       case 'Low': return AppColors.success;
-      default: return Colors.blue;
+      default: return AppColors.success;
     }
   }
 }

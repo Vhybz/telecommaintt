@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' as google;
 import 'package:flutter_map/flutter_map.dart' as osm;
 import 'package:latlong2/latlong.dart' as latlong;
 import '../data/station_repository.dart';
@@ -9,6 +7,7 @@ import '../domain/base_station.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../widgets/skeleton_loader.dart';
 import 'add_station_dialog.dart';
+import '../../predictions/data/prediction_repository.dart';
 import '../../maintenance/presentation/add_task_dialog.dart';
 
 class StationListScreen extends ConsumerStatefulWidget {
@@ -24,6 +23,7 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
   @override
   Widget build(BuildContext context) {
     final stationsAsync = ref.watch(stationsProvider);
+    final predictionsAsync = ref.watch(predictionsProvider);
 
     return Container(
       color: Theme.of(context).colorScheme.surface,
@@ -32,7 +32,12 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
           _buildToolBar(),
           Expanded(
             child: stationsAsync.when(
-              data: (stations) => _isMapView ? _buildMapView(context, stations) : _buildStationGrid(stations),
+              data: (stations) {
+                final predictions = predictionsAsync.asData?.value ?? [];
+                return _isMapView 
+                    ? _buildMapView(context, stations, predictions) 
+                    : _buildStationGrid(stations, predictions);
+              },
               loading: () => _buildLoadingState(),
               error: (err, stack) => Center(child: Text('Error: $err')),
             ),
@@ -86,44 +91,11 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
     );
   }
 
-  Widget _buildMapView(BuildContext context, List<BaseStation> stations) {
-    if (kIsWeb) return _buildGoogleMap(stations);
-    final platform = Theme.of(context).platform;
-    if (platform == TargetPlatform.android || platform == TargetPlatform.iOS) {
-      return _buildGoogleMap(stations);
-    }
-    return _buildOsmMap(stations);
+  Widget _buildMapView(BuildContext context, List<BaseStation> stations, List<dynamic> predictions) {
+    return _buildOsmMap(stations, predictions);
   }
 
-  Widget _buildGoogleMap(List<BaseStation> stations) {
-    return google.GoogleMap(
-      initialCameraPosition: const google.CameraPosition(
-        target: google.LatLng(7.9465, -1.0232),
-        zoom: 7,
-      ),
-      myLocationButtonEnabled: false,
-      zoomControlsEnabled: true,
-      mapType: google.MapType.normal,
-      markers: stations.map((station) {
-        final lat = station.latitude ?? 5.6037;
-        final lng = station.longitude ?? -0.1870;
-        return google.Marker(
-          markerId: google.MarkerId(station.id),
-          position: google.LatLng(lat, lng),
-          infoWindow: google.InfoWindow(
-            title: station.name,
-            snippet: 'Status: ${station.status}',
-          ),
-          onTap: () => _showStationDetails(station),
-          icon: google.BitmapDescriptor.defaultMarkerWithHue(
-            station.status == 'Online' ? google.BitmapDescriptor.hueGreen : google.BitmapDescriptor.hueRed,
-          ),
-        );
-      }).toSet(),
-    );
-  }
-
-  Widget _buildOsmMap(List<BaseStation> stations) {
+  Widget _buildOsmMap(List<BaseStation> stations, List<dynamic> predictions) {
     return osm.FlutterMap(
       options: const osm.MapOptions(
         initialCenter: latlong.LatLng(7.9465, -1.0232),
@@ -138,20 +110,33 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
           markers: stations.map((station) {
             final lat = station.latitude ?? 5.6037;
             final lng = station.longitude ?? -0.1870;
-            final statusColor = station.status == 'Online' ? AppColors.success : AppColors.error;
+            
+            // Find latest prediction for this station
+            final prediction = predictions.where((p) => p.stationId == station.id).firstOrNull;
+            
+            Color markerColor = station.status == 'Online' ? AppColors.success : AppColors.error;
+            if (prediction != null) {
+              if (prediction.riskLevel == 'High') markerColor = AppColors.critical;
+              else if (prediction.riskLevel == 'Medium') markerColor = AppColors.warning;
+              else if (prediction.riskLevel == 'Low') markerColor = AppColors.success;
+            }
+
             return osm.Marker(
               point: latlong.LatLng(lat, lng),
-              width: 40,
-              height: 40,
+              width: 45,
+              height: 45,
               child: GestureDetector(
-                onTap: () => _showStationDetails(station),
+                onTap: () => _showStationDetails(station, prediction),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.2),
+                    color: markerColor.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
-                    border: Border.all(color: statusColor, width: 2),
+                    border: Border.all(color: markerColor, width: 3),
+                    boxShadow: [
+                      BoxShadow(color: markerColor.withValues(alpha: 0.3), blurRadius: 8, spreadRadius: 2),
+                    ],
                   ),
-                  child: Icon(Icons.cell_tower, color: statusColor, size: 20),
+                  child: Icon(Icons.cell_tower, color: markerColor, size: 24),
                 ),
               ),
             );
@@ -161,7 +146,7 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
     );
   }
 
-  void _showStationDetails(BaseStation station) {
+  void _showStationDetails(BaseStation station, dynamic prediction) {
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -184,8 +169,20 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text('Site ID: ${station.siteId}'),
-                Text('Status: ${station.status}'),
-                Text('Operator: ${station.operator ?? "N/A"}'),
+                Text('Current Status: ${station.status}', style: TextStyle(
+                  color: station.status == 'Online' ? AppColors.success : AppColors.error,
+                  fontWeight: FontWeight.bold,
+                )),
+                if (prediction != null) ...[
+                  const Divider(height: 32),
+                  const Text('AI Health Insights:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text('Predicted Fault: ${prediction.faultType ?? "None"}'),
+                  Text('Risk Level: ${prediction.riskLevel}', style: TextStyle(
+                    color: _getRiskColor(prediction.riskLevel),
+                    fontWeight: FontWeight.bold,
+                  )),
+                ],
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -286,7 +283,7 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
     );
   }
 
-  Widget _buildStationGrid(List<BaseStation> stations) {
+  Widget _buildStationGrid(List<BaseStation> stations, List<dynamic> predictions) {
     return LayoutBuilder(builder: (context, constraints) {
       int crossAxisCount = constraints.maxWidth > 1200 ? 4 : (constraints.maxWidth > 800 ? 2 : 1);
       return GridView.builder(
@@ -300,18 +297,23 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
         itemCount: stations.length,
         itemBuilder: (context, index) {
           final station = stations[index];
-          return _buildStationCard(context, station);
+          final prediction = predictions.where((p) => p.stationId == station.id).firstOrNull;
+          return _buildStationCard(context, station, prediction);
         },
       );
     });
   }
 
-  Widget _buildStationCard(BuildContext context, BaseStation station) {
+  Widget _buildStationCard(BuildContext context, BaseStation station, dynamic prediction) {
     Color statusColor = station.status == 'Online' ? AppColors.success : AppColors.error;
+    if (prediction != null) {
+      if (prediction.riskLevel == 'High') statusColor = AppColors.critical;
+      else if (prediction.riskLevel == 'Medium') statusColor = AppColors.warning;
+    }
 
     return Card(
       child: InkWell(
-        onTap: () => _showStationDetails(station),
+        onTap: () => _showStationDetails(station, prediction),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -373,5 +375,15 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
         ),
       ),
     );
+  }
+
+  Color _getRiskColor(String? risk) {
+    if (risk == null) return AppColors.success;
+    switch (risk) {
+      case 'High': return AppColors.critical;
+      case 'Medium': return AppColors.warning;
+      case 'Low': return AppColors.success;
+      default: return AppColors.success;
+    }
   }
 }

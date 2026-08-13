@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' as google;
+import 'package:latlong2/latlong.dart' as latlong;
 import '../../stations/data/station_repository.dart';
 import '../../faults/data/fault_repository.dart';
 import '../data/prediction_repository.dart';
@@ -52,25 +52,25 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
     "WESTERN NORTH"
   ];
   
-  String? _selectedRegion = "GREATER ACCRA";
+  String? _selectedRegion;
 
-  final Map<String, google.LatLng> _regionCenters = {
-    "AHAFO": const google.LatLng(7.0911, -2.4833),
-    "ASHANTI": const google.LatLng(6.7000, -1.5333),
-    "BONO": const google.LatLng(7.5833, -2.5000),
-    "BONO EAST": const google.LatLng(7.7500, -1.0500),
-    "CENTRAL": const google.LatLng(5.5000, -1.2000),
-    "EASTERN": const google.LatLng(6.5000, -0.4333),
-    "GREATER ACCRA": const google.LatLng(5.6037, -0.1870),
-    "NORTH EAST": const google.LatLng(10.3333, -0.5000),
-    "NORTHERN": const google.LatLng(9.5000, -1.0000),
-    "OTI": const google.LatLng(8.0000, 0.5000),
-    "SAVANNAH": const google.LatLng(9.0833, -1.8333),
-    "UPPER EAST": const google.LatLng(10.8333, -0.8333),
-    "UPPER WEST": const google.LatLng(10.3333, -2.1667),
-    "VOLTA": const google.LatLng(6.5000, 0.5000),
-    "WESTERN": const google.LatLng(5.5000, -2.2500),
-    "WESTERN NORTH": const google.LatLng(6.2500, -2.8000),
+  final Map<String, latlong.LatLng> _regionCenters = {
+    "AHAFO": const latlong.LatLng(7.0911, -2.4833),
+    "ASHANTI": const latlong.LatLng(6.7000, -1.5333),
+    "BONO": const latlong.LatLng(7.5833, -2.5000),
+    "BONO EAST": const latlong.LatLng(7.7500, -1.0500),
+    "CENTRAL": const latlong.LatLng(5.5000, -1.2000),
+    "EASTERN": const latlong.LatLng(6.5000, -0.4333),
+    "GREATER ACCRA": const latlong.LatLng(5.6037, -0.1870),
+    "NORTH EAST": const latlong.LatLng(10.3333, -0.5000),
+    "NORTHERN": const latlong.LatLng(9.5000, -1.0000),
+    "OTI": const latlong.LatLng(8.0000, 0.5000),
+    "SAVANNAH": const latlong.LatLng(9.0833, -1.8333),
+    "UPPER EAST": const latlong.LatLng(10.8333, -0.8333),
+    "UPPER WEST": const latlong.LatLng(10.3333, -2.1667),
+    "VOLTA": const latlong.LatLng(6.5000, 0.5000),
+    "WESTERN": const latlong.LatLng(5.5000, -2.2500),
+    "WESTERN NORTH": const latlong.LatLng(6.2500, -2.8000),
   };
 
   @override
@@ -181,16 +181,12 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
 
           // 5. Update Map Focus on Dashboard (Safe check for disposed controller)
           if (_selectedRegion != null && _regionCenters.containsKey(_selectedRegion)) {
-            final target = _regionCenters[_selectedRegion]!;
+            final latlong.LatLng target = _regionCenters[_selectedRegion]!;
             ref.read(dashboardMapCenterProvider.notifier).state = target;
             
             final controller = ref.read(dashboardMapControllerProvider);
             if (controller != null) {
-              try {
-                controller.animateCamera(google.CameraUpdate.newLatLngZoom(target, 10));
-              } catch (e) {
-                debugPrint("Map controller was already disposed: $e");
-              }
+              controller.move(target, 10.0);
             }
           }
 
@@ -391,6 +387,7 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
                     initialValue: _selectedRegion,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
+                      labelText: "Region",
                       helperText: "The geographic region where the base station is located.",
                     ),
                     items: _regions.map((String region) {
@@ -404,6 +401,7 @@ class _PredictiveMaintenanceFormState extends ConsumerState<PredictiveMaintenanc
                         _selectedRegion = newValue;
                       });
                     },
+                    validator: (v) => v == null ? 'Please select a region' : null,
                   ),
                   
                   const SizedBox(height: 30),

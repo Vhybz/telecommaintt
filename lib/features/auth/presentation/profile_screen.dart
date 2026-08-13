@@ -194,7 +194,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
                     child: avatarUrl == null && !_isUploading
                       ? Icon(Icons.person, size: 60, color: Theme.of(context).colorScheme.primary)
-                      : _isUploading 
+                      : _isUploading
                           ? const CircularProgressIndicator()
                           : null,
                   ),
