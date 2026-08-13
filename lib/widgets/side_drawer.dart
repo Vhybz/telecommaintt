@@ -61,7 +61,7 @@ class SideDrawer extends ConsumerWidget {
               ],
             ),
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Icon(Icons.error_outline),
+            error: (error, stack) => const Icon(Icons.error_outline),
           ),
         ),
         

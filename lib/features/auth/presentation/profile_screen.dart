@@ -270,7 +270,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     padding: const EdgeInsets.all(16.0),
                     child: rolesAsync.when(
                       data: (roles) => DropdownButtonFormField<int>(
-                        value: _selectedRoleId,
+                        initialValue: _selectedRoleId,
                         decoration: const InputDecoration(labelText: 'Role', prefixIcon: Icon(Icons.admin_panel_settings_outlined)),
                         items: roles.map((r) => DropdownMenuItem<int>(
                           value: r['id'] as int,
@@ -279,7 +279,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         onChanged: (v) => setState(() => _selectedRoleId = v),
                       ),
                       loading: () => const LinearProgressIndicator(),
-                      error: (_, __) => const Text('Error loading roles'),
+                      error: (error, stack) => const Text('Error loading roles'),
                     ),
                   ),
               ],

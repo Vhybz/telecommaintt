@@ -116,9 +116,13 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
             
             Color markerColor = station.status == 'Online' ? AppColors.success : AppColors.error;
             if (prediction != null) {
-              if (prediction.riskLevel == 'High') markerColor = AppColors.critical;
-              else if (prediction.riskLevel == 'Medium') markerColor = AppColors.warning;
-              else if (prediction.riskLevel == 'Low') markerColor = AppColors.success;
+              if (prediction.riskLevel == 'High') {
+                markerColor = AppColors.critical;
+              } else if (prediction.riskLevel == 'Medium') {
+                markerColor = AppColors.warning;
+              } else if (prediction.riskLevel == 'Low') {
+                markerColor = AppColors.success;
+              }
             }
 
             return osm.Marker(
@@ -247,14 +251,14 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
               try {
                 await ref.read(stationRepositoryProvider).deleteStation(station.id);
                 ref.invalidate(stationsProvider);
-                if (mounted) {
+                if (context.mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Station deleted successfully')),
                   );
                 }
               } catch (e) {
-                if (mounted) {
+                if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
                   );
@@ -307,8 +311,11 @@ class _StationListScreenState extends ConsumerState<StationListScreen> {
   Widget _buildStationCard(BuildContext context, BaseStation station, dynamic prediction) {
     Color statusColor = station.status == 'Online' ? AppColors.success : AppColors.error;
     if (prediction != null) {
-      if (prediction.riskLevel == 'High') statusColor = AppColors.critical;
-      else if (prediction.riskLevel == 'Medium') statusColor = AppColors.warning;
+      if (prediction.riskLevel == 'High') {
+        statusColor = AppColors.critical;
+      } else if (prediction.riskLevel == 'Medium') {
+        statusColor = AppColors.warning;
+      }
     }
 
     return Card(

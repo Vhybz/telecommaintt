@@ -217,7 +217,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
                         ref.watch(rolesProvider).when(
                           data: (roles) => DropdownButtonFormField<int>(
-                            value: _selectedRoleId,
+                            initialValue: _selectedRoleId,
                             decoration: InputDecoration(
                               labelText: 'Account Role',
                               prefixIcon: const Icon(Icons.admin_panel_settings_outlined),
@@ -235,7 +235,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                             validator: (v) => v == null ? 'Please select a role' : null,
                           ),
                           loading: () => const LinearProgressIndicator(),
-                          error: (_, __) => const Text('Error loading roles'),
+                          error: (error, stack) => const Text('Error loading roles'),
                         ),
                         const SizedBox(height: 20),
                         

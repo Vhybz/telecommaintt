@@ -29,7 +29,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           reportsAsync.when(
             data: (reports) => _buildQuickStats(context, reports),
             loading: () => const LinearProgressIndicator(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (error, stack) => const SizedBox.shrink(),
           ),
           const SizedBox(height: 24),
           _buildCategoryFilters(),

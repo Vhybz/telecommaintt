@@ -84,17 +84,17 @@ class _GenerateReportDialogState extends ConsumerState<GenerateReportDialog> {
             children: [
               stationsAsync.when(
                 data: (stations) => DropdownButtonFormField<String>(
-                  value: _selectedStationId,
+                  initialValue: _selectedStationId,
                   decoration: const InputDecoration(labelText: 'Select Base Station'),
                   items: stations.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
                   onChanged: (v) => setState(() => _selectedStationId = v),
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Error loading stations'),
+                error: (error, stack) => const Text('Error loading stations'),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: const InputDecoration(labelText: 'Report Type'),
                 items: _reportTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
                 onChanged: (v) => setState(() => _selectedType = v!),
