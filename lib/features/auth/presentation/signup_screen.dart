@@ -158,190 +158,201 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           // Right side: Sign Up Form
           Expanded(
             flex: 1,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(48.0),
-              child: Center(
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 500),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Create Account',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text('Enter your details to get started'),
-                        const SizedBox(height: 32),
-                        
-                        // Name Row
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildTextField(
-                                controller: _firstNameController,
-                                label: 'First Name',
-                                icon: Icons.person_outline,
-                                textCapitalization: TextCapitalization.words,
-                                validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildTextField(
-                                controller: _surnameController,
-                                label: 'Surname',
-                                icon: Icons.person_outline,
-                                textCapitalization: TextCapitalization.words,
-                                validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        
-                        _buildTextField(
-                          controller: _professionController,
-                          label: 'Profession',
-                          icon: Icons.work_outline,
-                          textCapitalization: TextCapitalization.sentences,
-                          validator: (v) => v?.isEmpty ?? true ? 'Enter profession' : null,
-                        ),
-                        const SizedBox(height: 20),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: IntrinsicHeight(
+                      child: Center(
+                        child: Container(
+                          constraints: const BoxConstraints(maxWidth: 500),
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const SizedBox(height: 20),
+                                Text(
+                                  'Create Account',
+                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.primary,
+                                      ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text('Enter your details to get started'),
+                                const SizedBox(height: 32),
+                                
+                                // Name Row
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildTextField(
+                                        controller: _firstNameController,
+                                        label: 'First Name',
+                                        icon: Icons.person_outline,
+                                        textCapitalization: TextCapitalization.words,
+                                        validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: _buildTextField(
+                                        controller: _surnameController,
+                                        label: 'Surname',
+                                        icon: Icons.person_outline,
+                                        textCapitalization: TextCapitalization.words,
+                                        validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                                
+                                _buildTextField(
+                                  controller: _professionController,
+                                  label: 'Profession',
+                                  icon: Icons.work_outline,
+                                  textCapitalization: TextCapitalization.sentences,
+                                  validator: (v) => v?.isEmpty ?? true ? 'Enter profession' : null,
+                                ),
+                                const SizedBox(height: 20),
 
-                        ref.watch(rolesProvider).when(
-                          data: (roles) => DropdownButtonFormField<int>(
-                            initialValue: _selectedRoleId,
-                            decoration: InputDecoration(
-                              labelText: 'Account Role',
-                              prefixIcon: const Icon(Icons.admin_panel_settings_outlined),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
-                              ),
+                                ref.watch(rolesProvider).when(
+                                  data: (roles) => DropdownButtonFormField<int>(
+                                    initialValue: _selectedRoleId,
+                                    decoration: InputDecoration(
+                                      labelText: 'Account Role',
+                                      prefixIcon: const Icon(Icons.admin_panel_settings_outlined),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                                      ),
+                                    ),
+                                    items: roles.map((r) => DropdownMenuItem<int>(
+                                      value: r['id'] as int,
+                                      child: Text(r['name'] as String),
+                                    )).toList(),
+                                    onChanged: (v) => setState(() => _selectedRoleId = v),
+                                    validator: (v) => v == null ? 'Please select a role' : null,
+                                  ),
+                                  loading: () => const LinearProgressIndicator(),
+                                  error: (error, stack) => const Text('Error loading roles'),
+                                ),
+                                const SizedBox(height: 20),
+                                
+                                _buildTextField(
+                                  controller: _phoneController,
+                                  label: 'Phone Number',
+                                  icon: Icons.phone_outlined,
+                                  keyboardType: TextInputType.phone,
+                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                  validator: (v) => (v?.length ?? 0) < 10 ? 'Enter valid phone' : null,
+                                ),
+                                const SizedBox(height: 20),
+                                
+                                _buildTextField(
+                                  controller: _emailController,
+                                  label: 'Email Address',
+                                  icon: Icons.email_outlined,
+                                  keyboardType: TextInputType.emailAddress,
+                                  inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+                                  validator: (v) {
+                                    if (v == null || !v.contains('@')) return 'Enter valid email';
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                
+                                _buildTextField(
+                                  controller: _passwordController,
+                                  label: 'Password',
+                                  icon: Icons.lock_outline,
+                                  obscureText: _obscurePassword,
+                                  onChanged: _checkPasswordStrength,
+                                  inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+                                    ),
+                                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                  ),
+                                  validator: (v) => (v?.length ?? 0) < 6 ? 'Min 6 characters' : null,
+                                ),
+                                if (_passwordController.text.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: _strength,
+                                      backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                                      color: _strengthColor,
+                                      minHeight: 4,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Password strength: $_strengthText',
+                                    style: TextStyle(fontSize: 12, color: _strengthColor, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                                const SizedBox(height: 20),
+                                
+                                _buildTextField(
+                                  controller: _confirmPasswordController,
+                                  label: 'Confirm Password',
+                                  icon: Icons.lock_clock_outlined,
+                                  obscureText: _obscurePassword,
+                                  textInputAction: TextInputAction.done,
+                                  inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+                                  validator: (v) {
+                                    if (v != _passwordController.text) return 'Passwords do not match';
+                                    return null;
+                                  },
+                                ),
+                                
+                                const SizedBox(height: 32),
+                                ElevatedButton(
+                                  onPressed: _isLoading ? null : _signUp,
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                  ),
+                                  child: _isLoading
+                                      ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                        )
+                                      : const Text('Create Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                ),
+                                
+                                const SizedBox(height: 24),
+                                Wrap(
+                                  alignment: WrapAlignment.center,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    const Text("Already have an account?"),
+                                    TextButton(
+                                      onPressed: () => context.go('/login'),
+                                      child: const Text('Login'),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                              ],
                             ),
-                            items: roles.map((r) => DropdownMenuItem<int>(
-                              value: r['id'] as int,
-                              child: Text(r['name'] as String),
-                            )).toList(),
-                            onChanged: (v) => setState(() => _selectedRoleId = v),
-                            validator: (v) => v == null ? 'Please select a role' : null,
                           ),
-                          loading: () => const LinearProgressIndicator(),
-                          error: (error, stack) => const Text('Error loading roles'),
                         ),
-                        const SizedBox(height: 20),
-                        
-                        _buildTextField(
-                          controller: _phoneController,
-                          label: 'Phone Number',
-                          icon: Icons.phone_outlined,
-                          keyboardType: TextInputType.phone,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          validator: (v) => (v?.length ?? 0) < 10 ? 'Enter valid phone' : null,
-                        ),
-                        const SizedBox(height: 20),
-                        
-                        _buildTextField(
-                          controller: _emailController,
-                          label: 'Email Address',
-                          icon: Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
-                          inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
-                          validator: (v) {
-                            if (v == null || !v.contains('@')) return 'Enter valid email';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                        
-                        _buildTextField(
-                          controller: _passwordController,
-                          label: 'Password',
-                          icon: Icons.lock_outline,
-                          obscureText: _obscurePassword,
-                          onChanged: _checkPasswordStrength,
-                          inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
-                            ),
-                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                          ),
-                          validator: (v) => (v?.length ?? 0) < 6 ? 'Min 6 characters' : null,
-                        ),
-                        if (_passwordController.text.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: _strength,
-                              backgroundColor: Colors.grey.withValues(alpha: 0.1),
-                              color: _strengthColor,
-                              minHeight: 4,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Password strength: $_strengthText',
-                            style: TextStyle(fontSize: 12, color: _strengthColor, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                        const SizedBox(height: 20),
-                        
-                        _buildTextField(
-                          controller: _confirmPasswordController,
-                          label: 'Confirm Password',
-                          icon: Icons.lock_clock_outlined,
-                          obscureText: _obscurePassword,
-                          textInputAction: TextInputAction.done,
-                          inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
-                          validator: (v) {
-                            if (v != _passwordController.text) return 'Passwords do not match';
-                            return null;
-                          },
-                        ),
-                        
-                        const SizedBox(height: 32),
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : _signUp,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                )
-                              : const Text('Create Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            const Text("Already have an account?"),
-                            TextButton(
-                              onPressed: () => context.go('/login'),
-                              child: const Text('Login'),
-                            ),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              }
             ),
           ),
         ],

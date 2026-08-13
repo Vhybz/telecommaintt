@@ -102,7 +102,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final profileAsync = ref.watch(userProfileProvider);
     
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         border: Border(
@@ -120,9 +120,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 builder: (context) => IconButton(
                   icon: const Icon(Icons.menu_rounded),
                   onPressed: () => Scaffold.of(context).openDrawer(),
+                  visualDensity: VisualDensity.compact,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
             ],
             Expanded(
               child: Column(
@@ -131,7 +132,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Predictive Maintenance',
+                    'Predictive Maint.',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -139,16 +140,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   profileAsync.when(
                     data: (profile) => Text(
                       'Hi, ${profile?['full_name']?.split(' ').first ?? 'User'} 👋',
-                      style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    loading: () => const SizedBox(height: 12, width: 60, child: LinearProgressIndicator()),
-                    error: (error, stack) => const Text('Welcome back 👋', style: TextStyle(fontSize: 12)),
+                    loading: () => const SizedBox(height: 12, width: 40, child: LinearProgressIndicator()),
+                    error: (error, stack) => const Text('Welcome back 👋', style: TextStyle(fontSize: 11)),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             // Theme Toggle
             Consumer(
               builder: (context, ref, child) {
@@ -156,8 +157,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 return IconButton(
                   icon: Icon(
                     themeMode == ThemeMode.dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                    size: 20,
+                    size: 18,
                   ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                   onPressed: () {
                     ref.read(themeModeProvider.notifier).state = 
                       themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
@@ -165,10 +168,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 );
               },
             ),
+            const SizedBox(width: 12),
             Stack(
+              clipBehavior: Clip.none,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.notifications_none_rounded, size: 20),
+                  icon: const Icon(Icons.notifications_none_rounded, size: 18),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                   onPressed: () => setState(() => _selectedIndex = 4),
                 ),
                 ref.watch(alarmsProvider).when(
@@ -176,15 +183,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     final openAlarms = alarms.where((a) => a.status == 'Open').length;
                     if (openAlarms == 0) return const SizedBox.shrink();
                     return Positioned(
-                      right: 4,
-                      top: 4,
+                      right: -4,
+                      top: -4,
                       child: Container(
-                        padding: const EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(2),
                         decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
-                        constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                        constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
                         child: Text(
                           openAlarms > 9 ? '9+' : openAlarms.toString(), 
-                          style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold), 
+                          style: const TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.bold), 
                           textAlign: TextAlign.center
                         ),
                       ),
@@ -327,7 +334,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           
           double aspectRatio = constraints.maxWidth > 1400 ? 2.0 : 1.8;
           if (constraints.maxWidth < 600) aspectRatio = 2.2;
-          if (constraints.maxWidth < 500) aspectRatio = 3.5;
+          if (constraints.maxWidth < 500) aspectRatio = 3.2; // Taller cards for single column
           
           return GridView.count(
             shrinkWrap: true,
@@ -370,21 +377,41 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.05)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(12.0), // Reduced padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(child: Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                Icon(icon, color: color, size: 18),
+                Expanded(
+                  child: Text(
+                    title, 
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10), 
+                    maxLines: 1, 
+                    overflow: TextOverflow.ellipsis
+                  ),
+                ),
+                Icon(icon, color: color, size: 16),
               ],
             ),
             const Spacer(),
-            Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value, 
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(subtitle, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
+            Text(
+              subtitle, 
+              style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
@@ -737,16 +764,48 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildAlertTile(String title, String subtitle, String time, Color color, IconData icon) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-        child: Icon(icon, color: color, size: 18),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: 16),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title, 
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(time, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle, 
+                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-      title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-      trailing: Text(time, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
     );
   }
 
@@ -974,19 +1033,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              Expanded(
+                child: Text(
+                  title, 
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-                child: Text(priority, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+                child: Text(priority, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
           const SizedBox(height: 4),
           Row(
             children: [
-              Text(subtitle, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              const Spacer(),
+              Expanded(
+                child: Text(
+                  subtitle, 
+                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
               Text(date, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
             ],
           ),
@@ -1004,8 +1078,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 16,
+              runSpacing: 12,
               children: [
                 const Text('Network Performance Trends', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ToggleButtons(

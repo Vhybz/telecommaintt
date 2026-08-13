@@ -99,100 +99,109 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           // Right side: Login Form
           Expanded(
             flex: 1,
-            child: Padding(
-              padding: const EdgeInsets.all(48.0),
-              child: Center(
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 400),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Welcome Back',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text('Sign in to your account to continue'),
-                        const SizedBox(height: 48),
-                        TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
-                          decoration: const InputDecoration(
-                            labelText: 'Email Address',
-                            prefixIcon: Icon(Icons.email_outlined),
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) => value?.isEmpty ?? true ? 'Enter email' : null,
-                        ),
-                        const SizedBox(height: 24),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          keyboardType: TextInputType.visiblePassword,
-                          textInputAction: TextInputAction.done,
-                          inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
-                          onFieldSubmitted: (_) => _login(),
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            border: const OutlineInputBorder(),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
-                              ),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: IntrinsicHeight(
+                      child: Center(
+                        child: Container(
+                          constraints: const BoxConstraints(maxWidth: 400),
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  'Welcome Back',
+                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.primary,
+                                      ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text('Sign in to your account to continue'),
+                                const SizedBox(height: 48),
+                                TextFormField(
+                                  controller: _emailController,
+                                  keyboardType: TextInputType.emailAddress,
+                                  textInputAction: TextInputAction.next,
+                                  inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+                                  decoration: const InputDecoration(
+                                    labelText: 'Email Address',
+                                    prefixIcon: Icon(Icons.email_outlined),
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  validator: (value) => value?.isEmpty ?? true ? 'Enter email' : null,
+                                ),
+                                const SizedBox(height: 24),
+                                TextFormField(
+                                  controller: _passwordController,
+                                  obscureText: _obscurePassword,
+                                  keyboardType: TextInputType.visiblePassword,
+                                  textInputAction: TextInputAction.done,
+                                  inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+                                  onFieldSubmitted: (_) => _login(),
+                                  decoration: InputDecoration(
+                                    labelText: 'Password',
+                                    prefixIcon: const Icon(Icons.lock_outline),
+                                    border: const OutlineInputBorder(),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+                                      ),
+                                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                    ),
+                                  ),
+                                  validator: (value) => value?.isEmpty ?? true ? 'Enter password' : null,
+                                ),
+                                const SizedBox(height: 12),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton(
+                                    onPressed: () {},
+                                    child: const Text('Forgot Password?'),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                ElevatedButton(
+                                  onPressed: _isLoading ? null : _login,
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                  ),
+                                  child: _isLoading
+                                      ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                        )
+                                      : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                ),
+                                const SizedBox(height: 24),
+                                Wrap(
+                                  alignment: WrapAlignment.center,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    const Text("Don't have an account?"),
+                                    TextButton(
+                                      onPressed: () => context.go('/signup'),
+                                      child: const Text('Sign Up'),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          validator: (value) => value?.isEmpty ?? true ? 'Enter password' : null,
                         ),
-                        const SizedBox(height: 12),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {},
-                            child: const Text('Forgot Password?'),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : _login,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                )
-                              : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(height: 24),
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            const Text("Don't have an account?"),
-                            TextButton(
-                              onPressed: () => context.go('/signup'),
-                              child: const Text('Sign Up'),
-                            ),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              }
             ),
           ),
         ],
