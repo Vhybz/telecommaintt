@@ -1074,25 +1074,42 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(20.0), // Slightly reduced padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 16,
-              runSpacing: 12,
-              children: [
-                const Text('Network Performance Trends', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ToggleButtons(
-                  isSelected: const [true, false, false],
-                  onPressed: (i) {},
-                  constraints: const BoxConstraints(minHeight: 28, minWidth: 45),
-                  borderRadius: BorderRadius.circular(8),
-                  children: const [Text('24H', style: TextStyle(fontSize: 10)), Text('7D', style: TextStyle(fontSize: 10)), Text('30D', style: TextStyle(fontSize: 10))],
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 400) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Network Trends', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      ToggleButtons(
+                        isSelected: const [true, false, false],
+                        onPressed: (i) {},
+                        constraints: const BoxConstraints(minHeight: 28, minWidth: 45),
+                        borderRadius: BorderRadius.circular(8),
+                        children: const [Text('24H', style: TextStyle(fontSize: 10)), Text('7D', style: TextStyle(fontSize: 10)), Text('30D', style: TextStyle(fontSize: 10))],
+                      ),
+                    ],
+                  );
+                }
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Network Performance Trends', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ToggleButtons(
+                      isSelected: const [true, false, false],
+                      onPressed: (i) {},
+                      constraints: const BoxConstraints(minHeight: 28, minWidth: 45),
+                      borderRadius: BorderRadius.circular(8),
+                      children: const [Text('24H', style: TextStyle(fontSize: 10)), Text('7D', style: TextStyle(fontSize: 10)), Text('30D', style: TextStyle(fontSize: 10))],
+                    ),
+                  ],
+                );
+              }
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -1101,20 +1118,41 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 data: (kpis) {
                   if (kpis.isEmpty) return const Center(child: Text('No KPI data available'));
                   
-                  final reversedKpis = kpis.reversed.toList();
+                  // Limit to last 10 points on mobile for better fit
+                  final displayKpis = kpis.length > 10 ? kpis.take(10).toList() : kpis.toList();
+                  final reversedKpis = displayKpis.reversed.toList();
                   
                   return LineChart(
                     LineChartData(
+                      minY: 0,
+                      maxY: 110, // Extra space for labels
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: false,
                         getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.withValues(alpha: 0.1), strokeWidth: 1),
                       ),
-                      titlesData: const FlTitlesData(
-                        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
-                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true, 
+                            reservedSize: 35,
+                            interval: 20, // Explicit interval to prevent overlap
+                            getTitlesWidget: (value, meta) {
+                              if (value > 100) return const SizedBox.shrink();
+                              return Text(value.toInt().toString(), style: const TextStyle(fontSize: 10));
+                            },
+                          ),
+                        ),
+                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true, 
+                            reservedSize: 22,
+                            interval: 2,
+                            getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                          ),
+                        ),
                       ),
                       borderData: FlBorderData(show: false),
                       lineBarsData: [
@@ -1144,7 +1182,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const SizedBox(height: 12),
             const Wrap(
-              spacing: 16,
+              spacing: 12,
+              runSpacing: 8,
               children: [
                 _ChartLegendItem(label: 'Temp (°C)', color: AppColors.error),
                 _ChartLegendItem(label: 'Voltage (V)', color: AppColors.success),
