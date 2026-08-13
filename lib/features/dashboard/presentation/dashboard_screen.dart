@@ -45,32 +45,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildContent() {
-    switch (_selectedIndex) {
-      case 0:
-        return _buildDashboardOverview();
-      case 1:
-        return const StationListScreen();
-      case 2:
-        return const EquipmentListScreen();
-      case 3:
-        return const KpisScreen();
-      case 4:
-        return const FaultListScreen();
-      case 5:
-        return const PredictionListScreen();
-      case 6:
-        return const MaintenanceScreen();
-      case 7:
-        return const ReportsScreen();
-      case 8:
-        return const SettingsScreen();
-      case 9:
-        return const PredictiveMaintenanceForm();
-      case 10:
-        return const ProfileScreen();
-      default:
-        return _buildDashboardOverview();
-    }
+    return Container(
+      width: double.infinity,
+      child: switch (_selectedIndex) {
+        0 => _buildDashboardOverview(),
+        1 => const StationListScreen(),
+        2 => const EquipmentListScreen(),
+        3 => const KpisScreen(),
+        4 => const FaultListScreen(),
+        5 => const PredictionListScreen(),
+        6 => const MaintenanceScreen(),
+        7 => const ReportsScreen(),
+        8 => const SettingsScreen(),
+        9 => const PredictiveMaintenanceForm(),
+        10 => const ProfileScreen(),
+        _ => _buildDashboardOverview(),
+      },
+    );
   }
 
   @override
@@ -111,8 +102,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final profileAsync = ref.watch(userProfileProvider);
     
     return Container(
-      height: 80,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         border: Border(
@@ -121,111 +111,92 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
       ),
-      child: Row(
-        children: [
-          if (!isDesktop) ...[
-            Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.menu_rounded),
-                onPressed: () => Scaffold.of(context).openDrawer(),
+      child: SafeArea(
+        bottom: false,
+        child: Row(
+          children: [
+            if (!isDesktop) ...[
+              Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu_rounded),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Predictive Maintenance',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  profileAsync.when(
+                    data: (profile) => Text(
+                      'Hi, ${profile?['full_name']?.split(' ').first ?? 'User'} 👋',
+                      style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    loading: () => const SizedBox(height: 12, width: 60, child: LinearProgressIndicator()),
+                    error: (error, stack) => const Text('Welcome back 👋', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 8),
-          ],
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Theme Toggle
+            Consumer(
+              builder: (context, ref, child) {
+                final themeMode = ref.watch(themeModeProvider);
+                return IconButton(
+                  icon: Icon(
+                    themeMode == ThemeMode.dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    ref.read(themeModeProvider.notifier).state = 
+                      themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+                  },
+                );
+              },
+            ),
+            Stack(
               children: [
-                const Text(
-                  'Predictive Maintenance Dashboard',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: -0.5),
-                  overflow: TextOverflow.ellipsis,
+                IconButton(
+                  icon: const Icon(Icons.notifications_none_rounded, size: 20),
+                  onPressed: () => setState(() => _selectedIndex = 4),
                 ),
-                profileAsync.when(
-                  data: (profile) => Text(
-                    'Welcome back, ${profile?['full_name'] ?? 'User'} 👋',
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  loading: () => const SizedBox(height: 12, width: 100, child: LinearProgressIndicator()),
-                  error: (error, stack) => Text(
-                    'Welcome back 👋',
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  ),
+                ref.watch(alarmsProvider).when(
+                  data: (alarms) {
+                    final openAlarms = alarms.where((a) => a.status == 'Open').length;
+                    if (openAlarms == 0) return const SizedBox.shrink();
+                    return Positioned(
+                      right: 4,
+                      top: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
+                        constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                        child: Text(
+                          openAlarms > 9 ? '9+' : openAlarms.toString(), 
+                          style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold), 
+                          textAlign: TextAlign.center
+                        ),
+                      ),
+                    );
+                  },
+                  loading: () => const SizedBox.shrink(),
+                  error: (error, stack) => const SizedBox.shrink(),
                 ),
               ],
             ),
-          ),
-          const SizedBox(width: 16),
-          // Theme Toggle
-          Consumer(
-            builder: (context, ref, child) {
-              final themeMode = ref.watch(themeModeProvider);
-              return IconButton(
-                icon: Icon(
-                  themeMode == ThemeMode.dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                onPressed: () {
-                  ref.read(themeModeProvider.notifier).state = 
-                    themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-                },
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-          Stack(
-            children: [
-              IconButton(
-                icon: Icon(Icons.notifications_none_rounded, color: Theme.of(context).colorScheme.onSurface),
-                onPressed: () => setState(() => _selectedIndex = 4), // Go to Alerts
-              ),
-              ref.watch(alarmsProvider).when(
-                data: (alarms) {
-                  final openAlarms = alarms.where((a) => a.status == 'Open').length;
-                  if (openAlarms == 0) return const SizedBox.shrink();
-                  return Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
-                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                      child: Text(
-                        openAlarms > 9 ? '9+' : openAlarms.toString(), 
-                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), 
-                        textAlign: TextAlign.center
-                      ),
-                    ),
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (error, stack) => const SizedBox.shrink(),
-              ),
-            ],
-          ),
-          if (isDesktop) ...[
-            const SizedBox(width: 16),
-            GestureDetector(
-              onTap: () => setState(() => _selectedIndex = 10),
-              child: profileAsync.when(
-                data: (profile) => CircleAvatar(
-                  radius: 18,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  backgroundImage: profile?['avatar_url'] != null 
-                      ? NetworkImage(profile!['avatar_url']) 
-                      : null,
-                  child: profile?['avatar_url'] == null 
-                      ? const Icon(Icons.person, color: Colors.white, size: 22)
-                      : null,
-                ),
-                loading: () => const CircleAvatar(radius: 18, child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))),
-                error: (error, stack) => const CircleAvatar(radius: 18, child: Icon(Icons.person)),
-              ),
-            ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -486,18 +457,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Fault Prediction Summary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text('Fault Predictions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 Icon(Icons.more_horiz),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             predictionsAsync.when(
               data: (predictions) {
                 if (predictions.isEmpty) return const Center(child: Text('No predictions available'));
@@ -505,35 +476,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 600),
-                    child: Table(
-                      columnWidths: const {
-                        0: FlexColumnWidth(2),
-                        1: FlexColumnWidth(2),
-                        2: FlexColumnWidth(1),
-                        3: FlexColumnWidth(1),
-                        4: FlexColumnWidth(1.2),
-                      },
-                      children: [
-                        _buildTableHeader(),
-                        ...displayPredictions.map((p) {
-                          String status = 'Active';
-                          if (p.riskLevel == 'High') status = 'Urgent';
-                          if (p.riskLevel == 'Medium') status = 'Review';
-                          
-                          final stationName = stationsAsync.asData?.value.where((s) => s.id == p.stationId).firstOrNull?.name ?? 'Unknown Site';
-                          
-                          return _buildTableRow(
-                            stationName,
-                            p.faultType ?? 'Unknown',
-                            '${(p.probability * 100).toStringAsFixed(0)}%',
-                            p.riskLevel ?? 'Low',
-                            status,
-                          );
-                        }),
-                      ],
-                    ),
+                  child: Table(
+                    defaultColumnWidth: const IntrinsicColumnWidth(),
+                    children: [
+                      _buildTableHeader(),
+                      ...displayPredictions.map((p) {
+                        String status = 'Active';
+                        if (p.riskLevel == 'High') status = 'Urgent';
+                        if (p.riskLevel == 'Medium') status = 'Review';
+                        
+                        final stationName = stationsAsync.asData?.value.where((s) => s.id == p.stationId).firstOrNull?.name ?? 'Unknown';
+                        
+                        return _buildTableRow(
+                          stationName,
+                          p.faultType ?? 'Unknown',
+                          '${(p.probability * 100).toStringAsFixed(0)}%',
+                          p.riskLevel ?? 'Low',
+                          status,
+                        );
+                      }),
+                    ],
                   ),
                 );
               },
