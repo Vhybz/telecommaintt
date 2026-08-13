@@ -13,7 +13,7 @@ import '../../kpis/presentation/kpis_screen.dart';
 import '../../maintenance/presentation/maintenance_screen.dart';
 import '../../reports/presentation/reports_screen.dart';
 import '../../settings/presentation/settings_screen.dart';
-import '../../../widgets/side_navigation_rail.dart';
+import '../../../widgets/side_drawer.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../auth/data/auth_repository.dart';
@@ -77,22 +77,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Row(
+      drawer: SideDrawer(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+      ),
+      body: Column(
         children: [
-          SideNavigationRail(
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-          ),
-          const VerticalDivider(thickness: 1, width: 1),
+          _buildAppBar(),
           Expanded(
-            child: Column(
-              children: [
-                _buildAppBar(),
-                Expanded(
-                  child: _buildContent(),
-                ),
-              ],
-            ),
+            child: _buildContent(),
           ),
         ],
       ),
@@ -116,6 +109,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
       child: Row(
         children: [
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu_rounded),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
