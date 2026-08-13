@@ -139,12 +139,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                   profileAsync.when(
                     data: (profile) => Text(
-                      'Hi, ${profile?['full_name']?.split(' ').first ?? 'User'} 👋',
+                      'Hi, ${profile?['full_name']?.split(' ').first ?? 'User'}',
                       style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       overflow: TextOverflow.ellipsis,
                     ),
                     loading: () => const SizedBox(height: 12, width: 40, child: LinearProgressIndicator()),
-                    error: (error, stack) => const Text('Welcome back 👋', style: TextStyle(fontSize: 11)),
+                    error: (error, stack) => const Text('Hi! 👋', style: TextStyle(fontSize: 11)),
                   ),
                 ],
               ),
@@ -333,8 +333,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           if (constraints.maxWidth < 500) crossAxisCount = 1;
           
           double aspectRatio = constraints.maxWidth > 1400 ? 2.0 : 1.8;
-          if (constraints.maxWidth < 600) aspectRatio = 2.2;
-          if (constraints.maxWidth < 500) aspectRatio = 3.2; // Taller cards for single column
+          if (constraints.maxWidth < 800) aspectRatio = 1.6;
+          if (constraints.maxWidth < 600) aspectRatio = 1.4;
+          if (constraints.maxWidth < 500) aspectRatio = 2.4; // Taller for single column
           
           return GridView.count(
             shrinkWrap: true,
@@ -377,10 +378,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.05)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12.0), // Reduced padding
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -396,21 +397,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 Icon(icon, color: color, size: 16),
               ],
             ),
-            const Spacer(),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                value, 
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle, 
-              style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value, 
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Text(
+                  subtitle, 
+                  style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ],
         ),
@@ -1080,7 +1085,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           children: [
             LayoutBuilder(
               builder: (context, constraints) {
-                if (constraints.maxWidth < 400) {
+                if (constraints.maxWidth < 450) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1099,7 +1104,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Network Performance Trends', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const Expanded(
+                      child: Text('Network Trends', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                    ),
+                    const SizedBox(width: 8),
                     ToggleButtons(
                       isSelected: const [true, false, false],
                       onPressed: (i) {},
@@ -1149,8 +1157,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           sideTitles: SideTitles(
                             showTitles: true, 
                             reservedSize: 22,
-                            interval: 2,
-                            getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                            interval: 3, // Show label every 3 points to prevent overlap
+                            getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 9)),
                           ),
                         ),
                       ),
