@@ -281,29 +281,61 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
           ),
-          child: Row(
-            children: [
-              Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 600) {
+                return Column(
                   children: [
-                    const Text('AI Maintenance Insights', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    Row(
+                      children: [
+                        Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 12),
+                        const Text('AI Maintenance Insights', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
                     Text(
                       highRiskCount > 0 
                         ? 'Urgent: $highRiskCount high-risk potential faults detected. Primary concern: $topFault.'
                         : 'System stable. Next predicted maintenance event likely related to $topFault.',
                       style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton(
+                        onPressed: () => setState(() => _selectedIndex = 5),
+                        child: const Text('Analyze Patterns'),
+                      ),
+                    ),
                   ],
-                ),
-              ),
-              TextButton(
-                onPressed: () => setState(() => _selectedIndex = 5),
-                child: const Text('Analyze Patterns'),
-              ),
-            ],
+                );
+              }
+              return Row(
+                children: [
+                  Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('AI Maintenance Insights', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text(
+                          highRiskCount > 0 
+                            ? 'Urgent: $highRiskCount high-risk potential faults detected. Primary concern: $topFault.'
+                            : 'System stable. Next predicted maintenance event likely related to $topFault.',
+                          style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => setState(() => _selectedIndex = 5),
+                    child: const Text('Analyze Patterns'),
+                  ),
+                ],
+              );
+            }
           ),
         );
       },
@@ -327,10 +359,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return LayoutBuilder(builder: (context, constraints) {
           int crossAxisCount = constraints.maxWidth > 1400 ? 5 : (constraints.maxWidth > 900 ? 3 : 2);
           // Lower aspect ratio gives more height to cards to prevent bottom overflow
-          double aspectRatio = constraints.maxWidth > 1400 ? 2.0 : 1.8;
+          double aspectRatio = constraints.maxWidth > 1400 ? 2.0 : (constraints.maxWidth < 600 ? 1.4 : 1.8);
           
           return GridView.count(
             shrinkWrap: true,
+            padding: EdgeInsets.zero,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 16,

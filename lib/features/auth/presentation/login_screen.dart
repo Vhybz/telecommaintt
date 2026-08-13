@@ -177,8 +177,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ),
                         const SizedBox(height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             const Text("Don't have an account?"),
                             TextButton(
