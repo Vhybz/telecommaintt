@@ -6,10 +6,15 @@ from typing import List, Optional
 import httpx
 from dotenv import load_dotenv
 
-# Load environment variables from the assets folder in the root
-# The path is relative to the backend directory
+# Load environment variables
+# 1. Try to load from assets folder (Local Development)
 env_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'tel_config.txt')
-load_dotenv(dotenv_path=env_path)
+if os.path.exists(env_path):
+    load_dotenv(dotenv_path=env_path)
+# 2. Otherwise, check if a .env exists in current folder
+elif os.path.exists(".env"):
+    load_dotenv()
+# 3. If neither exist, FastAPI will just use system environment variables (Render/Production)
 
 # Local import from the same directory
 from predict import FaultPredictor
