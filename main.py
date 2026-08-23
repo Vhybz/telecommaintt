@@ -30,9 +30,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize the predictor using the current directory for artifacts
-current_dir = os.path.dirname(os.path.abspath(__file__))
-predictor = FaultPredictor(current_dir)
+# Initialize the predictor using the current working directory
+# In the 'api' branch, all model artifacts (.pkl files) are in the root
+predictor = FaultPredictor(os.getcwd())
 
 class KPIInput(BaseModel):
     AVAILABILITY: float
