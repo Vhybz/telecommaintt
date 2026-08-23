@@ -1,0 +1,16 @@
+# API Hosting URL
+API_BASE_URL=https://telecommaintt.onrender.com
+
+# Supabase Configuration
+SUPABASE_URL=https://sosxbgmmdgzbodqkghss.supabase.co
+SUPABASE_ANON_KEY=sb_publishable__B6Nvuw195njhA6T5grGsg_Y6Ic2VxX
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvc3hiZ21tZGd6Ym9kcWtnaHNzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjUyMDUyOSwiZXhwIjoyMTAyMDk2NTI5fQ.7AXG3kZzEZgJH023EzhS966G0K-Zf2_tbvVSYIfBIAk
+
+# Arkesel SMS API Configuration
+ARKESEL_SMS_API_KEY=akhlSEFORkpBSHBNR1JQTk1Lbm4
+ARKESEL_SMS_SENDER_ID=TeleAI
+ARKESEL_SMS_BASE_URL=https://sms.arkesel.com/sms/api
+ARKESEL_CONTACTS_BASE_URL=https://sms.arkesel.com/contacts/api
+
+# Notification Settings
+ADMIN_PHONE_NUMBER=233552636245
